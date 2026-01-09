@@ -2,12 +2,11 @@ import { Layout } from "@/components/layout/Layout";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { QuickAccessGrid } from "@/components/dashboard/QuickAccessGrid";
-import { InteractiveMap } from "@/components/map/InteractiveMap";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Maximize2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { MapPin, Maximize2, Globe } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const [showFullMap, setShowFullMap] = useState(false);
@@ -44,13 +43,18 @@ export default function Dashboard() {
             </Button>
           </div>
           <Card className="overflow-hidden">
-            <div
-              className={`transition-all duration-300 ease-in-out ${
+            <Link
+              to="/flights"
+              className={`flex flex-col items-center justify-center bg-gradient-to-br from-muted to-muted/50 transition-all duration-300 hover:from-primary/10 hover:to-primary/5 ${
                 showFullMap ? "h-80" : "h-48"
               }`}
             >
-              <InteractiveMap zoom={2} />
-            </div>
+              <Globe className="h-12 w-12 text-muted-foreground mb-2" />
+              <span className="text-muted-foreground font-medium">Open Interactive Map</span>
+              <span className="text-xs text-muted-foreground/70 mt-1">
+                Click to explore flights, ships & more
+              </span>
+            </Link>
           </Card>
         </section>
 

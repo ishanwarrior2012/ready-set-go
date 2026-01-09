@@ -64,9 +64,9 @@ export default function Flights() {
         <section className="w-full">
           <div className="relative w-full h-[400px] sm:h-[500px] bg-muted rounded-lg overflow-hidden">
             <iframe
-              src="https://www.flightradar24.com/40.64,-73.78/10"
+              src="https://embed.flightaware.com/commercial/integrated/web/delay_map_fullpage.rvt"
               className="w-full h-full border-0"
-              title="Flightradar24 Live Map"
+              title="FlightAware Live Map"
               allow="geolocation"
             />
             <button

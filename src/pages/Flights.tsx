@@ -32,11 +32,8 @@ const recentFlights = [
 export default function Flights() {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const openFlightradar = (airport?: string) => {
-    const url = airport 
-      ? `https://www.flightradar24.com/airport/${airport.toLowerCase()}`
-      : "https://www.flightradar24.com/";
-    window.open(url, "_blank", "noopener,noreferrer");
+  const openFlightradar = () => {
+    window.open("https://www.flightradar24.com/40.64,-73.78/10", "_blank", "noopener,noreferrer");
   };
 
   const searchFlight = () => {
@@ -115,7 +112,7 @@ export default function Flights() {
               <Card
                 key={airport.code}
                 className="p-4 cursor-pointer hover:bg-accent/50 transition-colors group"
-                onClick={() => openFlightradar(airport.code)}
+                onClick={() => window.open(`https://www.flightradar24.com/${airport.code.toLowerCase()}`, "_blank", "noopener,noreferrer")}
               >
                 <div className="flex items-center justify-between">
                   <div>

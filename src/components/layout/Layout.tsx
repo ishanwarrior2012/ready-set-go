@@ -2,12 +2,14 @@ import { useState } from "react";
 import { Header } from "./Header";
 import { BottomNavigation } from "./BottomNavigation";
 import { Sidebar } from "./Sidebar";
+import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 
 interface LayoutProps {
   children: React.ReactNode;
+  showFab?: boolean;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, showFab = true }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -19,6 +21,7 @@ export function Layout({ children }: LayoutProps) {
         {children}
       </main>
       
+      {showFab && <FloatingActionButton />}
       <BottomNavigation />
     </div>
   );

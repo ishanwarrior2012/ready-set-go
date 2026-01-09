@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "@/contexts/ThemeContext";
 import { lazy, Suspense } from "react";
 import { LoadingPage } from "@/components/ui/LoadingSpinner";
 
@@ -26,31 +25,29 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<LoadingPage />}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/flights" element={<Flights />} />
-              <Route path="/marine" element={<Marine />} />
-              <Route path="/earthquakes" element={<Earthquakes />} />
-              <Route path="/volcanoes" element={<Volcanoes />} />
-              <Route path="/weather" element={<Weather />} />
-              <Route path="/radio" element={<RadioPage />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Suspense fallback={<LoadingPage />}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/flights" element={<Flights />} />
+            <Route path="/marine" element={<Marine />} />
+            <Route path="/earthquakes" element={<Earthquakes />} />
+            <Route path="/volcanoes" element={<Volcanoes />} />
+            <Route path="/weather" element={<Weather />} />
+            <Route path="/radio" element={<RadioPage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/favorites" element={<Favorites />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 

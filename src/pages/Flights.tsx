@@ -48,39 +48,40 @@ export default function Flights() {
 
   return (
     <Layout>
-      <div className="p-4 space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in">
         {/* Header */}
-        <section>
+        <section className="px-4 pt-4">
           <h1 className="font-heading text-2xl font-bold flex items-center gap-2">
             <Plane className="h-6 w-6 text-electric" />
             Flight Radar
           </h1>
           <p className="text-muted-foreground">
-            Track flights worldwide with Flightradar24
+            Track flights worldwide in real-time
           </p>
         </section>
 
-        {/* Quick Launch */}
-        <Card className="p-6 bg-gradient-to-br from-electric/10 to-primary/5 border-electric/20">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <h2 className="font-heading text-lg font-semibold mb-1">Live Flight Map</h2>
-              <p className="text-sm text-muted-foreground">
-                View real-time aircraft positions on an interactive map
-              </p>
-            </div>
+        {/* Embedded Flightradar24 Map */}
+        <section className="w-full">
+          <div className="relative w-full h-[400px] sm:h-[500px] bg-muted rounded-lg overflow-hidden">
+            <iframe
+              src="https://www.flightradar24.com/40.64,-73.78/10"
+              className="w-full h-full border-0"
+              title="Flightradar24 Live Map"
+              allow="geolocation"
+            />
             <Button 
               onClick={() => openFlightradar()}
-              className="gap-2 bg-electric hover:bg-electric/90"
+              className="absolute top-3 right-3 gap-2 bg-electric hover:bg-electric/90 shadow-lg"
+              size="sm"
             >
               <ExternalLink className="h-4 w-4" />
-              Open Flightradar24
+              Open Full Screen
             </Button>
           </div>
-        </Card>
+        </section>
 
         {/* Search */}
-        <section>
+        <section className="px-4">
           <h2 className="font-heading text-lg font-semibold mb-3 flex items-center gap-2">
             <Search className="h-5 w-5 text-primary" />
             Search Flight
@@ -102,7 +103,7 @@ export default function Flights() {
         </section>
 
         {/* Popular Airports */}
-        <section>
+        <section className="px-4">
           <h2 className="font-heading text-lg font-semibold mb-3 flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" />
             Popular Airports
@@ -127,7 +128,7 @@ export default function Flights() {
         </section>
 
         {/* Recent Activity */}
-        <section>
+        <section className="px-4 pb-4">
           <h2 className="font-heading text-lg font-semibold mb-3 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
             Sample Flights
@@ -170,13 +171,6 @@ export default function Flights() {
             ))}
           </Card>
         </section>
-
-        {/* Info Card */}
-        <Card className="p-4 bg-muted/50">
-          <p className="text-sm text-muted-foreground text-center">
-            Flight data is provided by Flightradar24. Click any item to open in a new tab for detailed real-time tracking.
-          </p>
-        </Card>
       </div>
     </Layout>
   );

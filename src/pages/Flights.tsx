@@ -69,14 +69,18 @@ export default function Flights() {
               title="Flightradar24 Live Map"
               allow="geolocation"
             />
-            <Button 
-              onClick={() => openFlightradar()}
-              className="absolute top-3 right-3 gap-2 bg-electric hover:bg-electric/90 shadow-lg"
-              size="sm"
+            <button
+              onClick={() =>
+                window.open(
+                  "https://www.flightradar24.com/40.64,-73.78/10",
+                  "_blank",
+                  "noopener,noreferrer"
+                )
+              }
+              className="absolute top-3 right-3 px-4 py-2 bg-electric hover:bg-electric/90 text-white font-medium rounded-lg shadow-lg transition-colors"
             >
-              <ExternalLink className="h-4 w-4" />
-              Open Full Screen
-            </Button>
+              Open Live Radar on Flightradar24
+            </button>
           </div>
         </section>
 

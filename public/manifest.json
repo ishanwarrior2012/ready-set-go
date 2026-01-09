@@ -1,0 +1,46 @@
+{
+  "name": "SafeTrack - Global Tracking & Monitoring",
+  "short_name": "SafeTrack",
+  "description": "Track flights, ships, earthquakes, volcanoes, weather, and global radio stations in real-time.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1E293B",
+  "theme_color": "#0EA5E9",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "navigation", "weather"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Flight Radar",
+      "short_name": "Flights",
+      "url": "/flights",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Weather",
+      "short_name": "Weather",
+      "url": "/weather",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

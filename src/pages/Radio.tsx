@@ -326,17 +326,17 @@ export default function RadioPage() {
                       </Button>
                       <Button 
                         size="icon" 
-                        variant={currentStation.name === station.name && isPlaying ? "default" : "ghost"}
+                        variant={currentStation?.name === station.name && isPlaying ? "default" : "ghost"}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (currentStation.name === station.name) {
+                          if (currentStation?.name === station.name) {
                             setIsPlaying(!isPlaying);
                           } else {
                             playStation(station);
                           }
                         }}
                       >
-                        {currentStation.name === station.name && isPlaying ? (
+                        {currentStation?.name === station.name && isPlaying ? (
                           <Pause className="h-4 w-4" />
                         ) : (
                           <Play className="h-4 w-4" />

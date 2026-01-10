@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,20 +15,73 @@ import {
   Music,
   Mic,
   Headphones,
-  MapPin
+  MapPin,
+  Loader2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
-const featuredStations = [
-  { name: "BBC Radio 1", location: "London, UK", genre: "Pop", playing: "Now Playing: Top Hits", country: "🇬🇧" },
-  { name: "NPR", location: "Washington, USA", genre: "Talk", playing: "Morning Edition", country: "🇺🇸" },
-  { name: "NHK Radio", location: "Tokyo, Japan", genre: "News", playing: "World News", country: "🇯🇵" },
-  { name: "Radio France", location: "Paris, France", genre: "Classical", playing: "Evening Concert", country: "🇫🇷" },
-  { name: "RNE", location: "Madrid, Spain", genre: "Variety", playing: "La Mañana", country: "🇪🇸" },
-  { name: "ABC Radio", location: "Sydney, Australia", genre: "News", playing: "AM Live", country: "🇦🇺" },
+interface RadioStation {
+  name: string;
+  location: string;
+  genre: string;
+  playing: string;
+  country: string;
+  streamUrl: string;
+}
+
+const featuredStations: RadioStation[] = [
+  { 
+    name: "BBC Radio 1", 
+    location: "London, UK", 
+    genre: "Pop", 
+    playing: "Live Radio", 
+    country: "🇬🇧",
+    streamUrl: "https://stream.live.vc.bbcmedia.co.uk/bbc_radio_one"
+  },
+  { 
+    name: "NPR News", 
+    location: "Washington, USA", 
+    genre: "News", 
+    playing: "Live News", 
+    country: "🇺🇸",
+    streamUrl: "https://npr-ice.streamguys1.com/live.mp3"
+  },
+  { 
+    name: "Classic FM", 
+    location: "London, UK", 
+    genre: "Classical", 
+    playing: "Classical Music", 
+    country: "🇬🇧",
+    streamUrl: "https://media-ice.musicradio.com/ClassicFMMP3"
+  },
+  { 
+    name: "KEXP 90.3", 
+    location: "Seattle, USA", 
+    genre: "Indie", 
+    playing: "Alternative Music", 
+    country: "🇺🇸",
+    streamUrl: "https://kexp-mp3-128.streamguys1.com/kexp128.mp3"
+  },
+  { 
+    name: "FIP Radio", 
+    location: "Paris, France", 
+    genre: "Eclectic", 
+    playing: "World Music", 
+    country: "🇫🇷",
+    streamUrl: "https://icecast.radiofrance.fr/fip-midfi.mp3"
+  },
+  { 
+    name: "SomaFM Groove Salad", 
+    location: "San Francisco, USA", 
+    genre: "Ambient", 
+    playing: "Chill Beats", 
+    country: "🇺🇸",
+    streamUrl: "https://ice4.somafm.com/groovesalad-256-mp3"
+  },
 ];
 
 const genres = [
@@ -40,19 +93,27 @@ const genres = [
   { id: "talk", label: "Talk", icon: Mic, count: 276 },
 ];
 
-const recentlyPlayed = [
-  { name: "Classic FM", location: "UK", genre: "Classical" },
-  { name: "KEXP", location: "Seattle, USA", genre: "Indie" },
-  { name: "FIP", location: "Paris, France", genre: "Eclectic" },
-];
-
 export default function RadioPage() {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentStation, setCurrentStation] = useState(featuredStations[0]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentStation, setCurrentStation] = useState<RadioStation | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState([75]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [favorites, setFavorites] = useState<string[]>(["BBC Radio 1", "NPR"]);
+  const [favorites, setFavorites] = useState<string[]>(["BBC Radio 1", "NPR News"]);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume[0] / 100;
+    }
+  }, [volume]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
 
   const openRadioGarden = () => {
     window.open("https://radio.garden/", "_blank", "noopener,noreferrer");
@@ -66,13 +127,57 @@ export default function RadioPage() {
     );
   };
 
-  const playStation = (station: typeof featuredStations[0]) => {
+  const playStation = async (station: RadioStation) => {
+    if (currentStation?.name === station.name && isPlaying) {
+      // Pause current station
+      audioRef.current?.pause();
+      setIsPlaying(false);
+      return;
+    }
+
     setCurrentStation(station);
-    setIsPlaying(true);
+    setIsLoading(true);
+
+    if (audioRef.current) {
+      audioRef.current.src = station.streamUrl;
+      try {
+        await audioRef.current.play();
+        setIsPlaying(true);
+        toast.success(`Now playing: ${station.name}`);
+      } catch (error) {
+        console.error("Error playing stream:", error);
+        toast.error("Could not play this station. Try another one.");
+        setIsPlaying(false);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const togglePlayPause = async () => {
+    if (!currentStation) {
+      playStation(featuredStations[0]);
+      return;
+    }
+
+    if (isPlaying) {
+      audioRef.current?.pause();
+      setIsPlaying(false);
+    } else {
+      try {
+        await audioRef.current?.play();
+        setIsPlaying(true);
+      } catch (error) {
+        toast.error("Could not resume playback");
+      }
+    }
   };
 
   return (
     <Layout>
+      {/* Hidden Audio Element */}
+      <audio ref={audioRef} preload="none" />
+      
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <section className="px-4 pt-4">
@@ -113,29 +218,38 @@ export default function RadioPage() {
                 size="lg"
                 variant={isPlaying ? "default" : "secondary"}
                 className="shrink-0 h-14 w-14 rounded-full"
-                onClick={() => setIsPlaying(!isPlaying)}
+                onClick={togglePlayPause}
+                disabled={isLoading}
               >
-                {isPlaying ? (
+                {isLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : isPlaying ? (
                   <Pause className="h-6 w-6" />
                 ) : (
                   <Play className="h-6 w-6 ml-1" />
                 )}
               </Button>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-lg truncate">{currentStation.name} {currentStation.country}</p>
-                <p className="text-sm text-muted-foreground truncate">
-                  {currentStation.playing}
+                <p className="font-semibold text-lg truncate">
+                  {currentStation ? `${currentStation.name} ${currentStation.country}` : "Select a station"}
                 </p>
-                <Badge variant="secondary" className="mt-1">{currentStation.genre}</Badge>
+                <p className="text-sm text-muted-foreground truncate">
+                  {currentStation?.playing || "Choose from featured stations below"}
+                </p>
+                {currentStation && (
+                  <Badge variant="secondary" className="mt-1">{currentStation.genre}</Badge>
+                )}
               </div>
               <div className="flex items-center gap-2">
-                <Button 
-                  size="icon" 
-                  variant="ghost"
-                  onClick={() => toggleFavorite(currentStation.name)}
-                >
-                  <Heart className={`h-5 w-5 ${favorites.includes(currentStation.name) ? "fill-red-500 text-red-500" : ""}`} />
-                </Button>
+                {currentStation && (
+                  <Button 
+                    size="icon" 
+                    variant="ghost"
+                    onClick={() => toggleFavorite(currentStation.name)}
+                  >
+                    <Heart className={`h-5 w-5 ${favorites.includes(currentStation.name) ? "fill-red-500 text-red-500" : ""}`} />
+                  </Button>
+                )}
                 <Button 
                   size="icon" 
                   variant="ghost"

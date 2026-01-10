@@ -103,7 +103,7 @@ export default function SearchPage() {
   };
 
   return (
-    <Layout>
+    <Layout showFab={false}>
       <div className="flex flex-col h-[calc(100vh-8rem)]">
         {/* Header */}
         <section className="px-4 pt-4 pb-2">

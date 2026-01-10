@@ -6,8 +6,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AppProvider } from "@/contexts/AppContext";
 import { AuthProvider } from "@/hooks/useAuth";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { LoadingPage } from "@/components/ui/LoadingSpinner";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 
 // Lazy load pages for better performance
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -25,41 +27,74 @@ const Notifications = lazy(() => import("./pages/Notifications"));
 const AuthPage = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <AuthProvider>
-        <AppProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Suspense fallback={<LoadingPage />}>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/auth" element={<AuthPage />} />
-                  <Route path="/flights" element={<Flights />} />
-                  <Route path="/marine" element={<Marine />} />
-                  <Route path="/earthquakes" element={<Earthquakes />} />
-                  <Route path="/volcanoes" element={<Volcanoes />} />
-                  <Route path="/weather" element={<Weather />} />
-                  <Route path="/radio" element={<RadioPage />} />
-                  <Route path="/search" element={<SearchPage />} />
-                  <Route path="/favorites" element={<Favorites />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/notifications" element={<Notifications />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </BrowserRouter>
-          </TooltipProvider>
-        </AppProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+// Register service worker for PWA
+function useServiceWorker() {
+  useEffect(() => {
+    if ("serviceWorker" in navigator && import.meta.env.PROD) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((registration) => {
+            console.log("SW registered:", registration.scope);
+          })
+          .catch((error) => {
+            console.log("SW registration failed:", error);
+          });
+      });
+    }
+  }, []);
+}
+
+const App = () => {
+  useServiceWorker();
+
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AuthProvider>
+            <AppProvider>
+              <TooltipProvider>
+                <OfflineIndicator />
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Suspense fallback={<LoadingPage />}>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/auth" element={<AuthPage />} />
+                      <Route path="/flights" element={<Flights />} />
+                      <Route path="/marine" element={<Marine />} />
+                      <Route path="/earthquakes" element={<Earthquakes />} />
+                      <Route path="/volcanoes" element={<Volcanoes />} />
+                      <Route path="/weather" element={<Weather />} />
+                      <Route path="/radio" element={<RadioPage />} />
+                      <Route path="/search" element={<SearchPage />} />
+                      <Route path="/favorites" element={<Favorites />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/notifications" element={<Notifications />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                </BrowserRouter>
+              </TooltipProvider>
+            </AppProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
+};
 
 export default App;

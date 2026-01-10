@@ -16,6 +16,7 @@ import {
   Moon,
   Sun,
   Monitor,
+  Waves,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -43,6 +44,7 @@ const navigationGroups = [
       { label: "Marine Traffic", icon: Ship, path: "/marine" },
       { label: "Earthquakes", icon: Mountain, path: "/earthquakes" },
       { label: "Volcanoes", icon: Flame, path: "/volcanoes" },
+      { label: "Tsunami", icon: Waves, path: "/tsunami" },
     ],
   },
   {

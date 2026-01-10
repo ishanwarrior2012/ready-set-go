@@ -72,7 +72,7 @@ export default function Volcanoes() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const openVolcanoMap = () => {
-    window.open("https://volcano.si.edu/gvp_votw.cfm", "_blank", "noopener,noreferrer");
+    window.open("https://www.arcgis.com/apps/View/index.html?appid=b6da6146b01a4637a8f33bf5245e10fc", "_blank", "noopener,noreferrer");
   };
 
   const searchVolcano = () => {
@@ -106,9 +106,9 @@ export default function Volcanoes() {
         <section className="w-full">
           <div className="relative w-full h-[400px] sm:h-[500px] bg-muted rounded-lg overflow-hidden">
             <iframe
-              src="https://volcano.si.edu/E3/active_volcanoes_map.cfm"
+              src="https://www.arcgis.com/apps/View/index.html?appid=b6da6146b01a4637a8f33bf5245e10fc"
               className="w-full h-full border-0"
-              title="Smithsonian Volcano Map"
+              title="ArcGIS Volcano Map"
             />
             <Button 
               onClick={openVolcanoMap}

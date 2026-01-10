@@ -89,7 +89,7 @@ export default function RadioPage() {
         <section className="w-full">
           <div className="relative w-full h-[350px] sm:h-[450px] bg-muted rounded-lg overflow-hidden">
             <iframe
-              src="https://radio.garden/embed/london/bbc-radio-1-ErzGtXME"
+              src="https://radio.garden/"
               className="w-full h-full border-0"
               title="Radio Garden"
               allow="autoplay"

@@ -20,13 +20,7 @@ import {
   Loader2
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-}
+import { useAIChat, ChatMessage } from "@/hooks/useAIChat";
 
 const suggestedQueries = [
   { icon: Mountain, text: "Show me recent earthquakes above 5.0 magnitude", category: "Earthquakes" },
@@ -43,18 +37,16 @@ const quickActions = [
   { icon: Cloud, label: "Weather", color: "text-sky-500" },
 ];
 
-const searchHistory = [
-  "Flight UA237 status",
-  "Earthquakes in California",
-  "Weather in London",
-];
-
 export default function SearchPage() {
   const [query, setQuery] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<string[]>(() => {
+    const saved = localStorage.getItem("safetrack-search-history");
+    return saved ? JSON.parse(saved) : [];
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  const { messages, isLoading, sendMessage, clearMessages } = useAIChat();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -63,69 +55,51 @@ export default function SearchPage() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!query.trim()) return;
+    if (!query.trim() || isLoading) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: query,
-      timestamp: new Date(),
-    };
+    // Add to search history
+    const newHistory = [query, ...searchHistory.filter(h => h !== query)].slice(0, 5);
+    setSearchHistory(newHistory);
+    localStorage.setItem("safetrack-search-history", JSON.stringify(newHistory));
 
-    setMessages(prev => [...prev, userMessage]);
+    const currentQuery = query;
     setQuery("");
-    setIsLoading(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const responses: Record<string, string> = {
-        earthquake: "Based on USGS data, there have been 5 earthquakes above magnitude 5.0 in the last 24 hours. The largest was a M6.1 in Chile. Would you like me to show you the details on the map?",
-        flight: "I found flight information. The flight is currently en route and scheduled to arrive on time. You can track it in real-time on the Flight Radar page.",
-        weather: "The current weather shows partly cloudy conditions with temperatures around 24°C. The forecast shows potential rain on Wednesday. Check the Weather page for detailed information.",
-        radio: "I found several stations matching your criteria. You can listen to them on the Radio page. Would you like me to recommend some popular ones?",
-        ship: "I can help you track vessels. Head over to the Marine Traffic page to see real-time ship positions and details.",
-      };
-
-      let response = "I can help you with tracking flights, ships, earthquakes, volcanoes, weather, and finding radio stations. What would you like to know?";
-      
-      const lowerQuery = query.toLowerCase();
-      if (lowerQuery.includes("earthquake") || lowerQuery.includes("seismic")) {
-        response = responses.earthquake;
-      } else if (lowerQuery.includes("flight") || lowerQuery.includes("plane")) {
-        response = responses.flight;
-      } else if (lowerQuery.includes("weather") || lowerQuery.includes("forecast")) {
-        response = responses.weather;
-      } else if (lowerQuery.includes("radio") || lowerQuery.includes("station")) {
-        response = responses.radio;
-      } else if (lowerQuery.includes("ship") || lowerQuery.includes("vessel") || lowerQuery.includes("marine")) {
-        response = responses.ship;
-      }
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: response,
-        timestamp: new Date(),
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsLoading(false);
-    }, 1500);
+    await sendMessage(currentQuery);
   };
 
   const handleVoiceInput = () => {
+    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
+      return;
+    }
+
     setIsListening(!isListening);
-    // Voice input simulation
+    
     if (!isListening) {
-      setTimeout(() => {
-        setQuery("Show me recent earthquakes");
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setQuery(transcript);
         setIsListening(false);
-      }, 2000);
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.start();
     }
   };
 
   const clearChat = () => {
-    setMessages([]);
+    clearMessages();
   };
 
   return (
@@ -165,7 +139,7 @@ export default function SearchPage() {
                   How can I help you today?
                 </h2>
                 <p className="text-muted-foreground text-sm">
-                  I can help you track flights, ships, earthquakes, and more
+                  Powered by Gemini AI - I can help you track flights, ships, earthquakes, and more
                 </p>
               </div>
 
@@ -224,7 +198,7 @@ export default function SearchPage() {
           ) : (
             <ScrollArea className="h-full pr-4" ref={scrollRef}>
               <div className="space-y-4 py-4">
-                {messages.map((message) => (
+                {messages.map((message: ChatMessage) => (
                   <div
                     key={message.id}
                     className={`flex gap-3 ${message.role === "user" ? "justify-end" : ""}`}
@@ -239,7 +213,7 @@ export default function SearchPage() {
                         ? "bg-primary text-primary-foreground" 
                         : "bg-muted"
                     }`}>
-                      <p className="text-sm">{message.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                       <p className={`text-xs mt-2 ${
                         message.role === "user" 
                           ? "text-primary-foreground/70" 
@@ -261,7 +235,10 @@ export default function SearchPage() {
                       <Bot className="h-4 w-4 text-primary" />
                     </div>
                     <Card className="p-3 bg-muted">
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm text-muted-foreground">Thinking...</span>
+                      </div>
                     </Card>
                   </div>
                 )}
@@ -282,11 +259,13 @@ export default function SearchPage() {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 className="flex-1 border-0 bg-transparent focus-visible:ring-0"
+                disabled={isLoading}
               />
               <Button 
                 size="icon" 
                 variant={isListening ? "default" : "ghost"}
                 onClick={handleVoiceInput}
+                disabled={isLoading}
               >
                 <Mic className={`h-5 w-5 ${isListening ? "animate-pulse" : ""}`} />
               </Button>

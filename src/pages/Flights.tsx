@@ -32,14 +32,14 @@ const recentFlights = [
 export default function Flights() {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const openFlightradar = () => {
-    window.open("https://www.flightradar24.com/40.64,-73.78/10", "_blank", "noopener,noreferrer");
+  const openFullScreen = () => {
+    window.open("https://globe.adsbexchange.com/", "_blank", "noopener,noreferrer");
   };
 
   const searchFlight = () => {
     if (searchQuery.trim()) {
       window.open(
-        `https://www.flightradar24.com/${searchQuery.trim().toUpperCase()}`,
+        `https://globe.adsbexchange.com/?icao=${searchQuery.trim().toUpperCase()}`,
         "_blank",
         "noopener,noreferrer"
       );
@@ -60,17 +60,17 @@ export default function Flights() {
           </p>
         </section>
 
-        {/* Embedded Flightradar24 Map */}
+        {/* Embedded ADS-B Exchange Globe */}
         <section className="w-full">
           <div className="relative w-full h-[400px] sm:h-[500px] bg-muted rounded-lg overflow-hidden">
             <iframe
-              src="https://www.flightradar24.com/40.64,-73.78/10"
+              src="https://globe.adsbexchange.com/"
               className="w-full h-full border-0"
-              title="Flightradar24 Live Map"
+              title="ADS-B Exchange Live Globe"
               allow="geolocation"
             />
             <Button 
-              onClick={() => openFlightradar()}
+              onClick={openFullScreen}
               className="absolute top-3 right-3 gap-2 bg-electric hover:bg-electric/90 shadow-lg"
               size="sm"
             >
@@ -113,7 +113,7 @@ export default function Flights() {
               <Card
                 key={airport.code}
                 className="p-4 cursor-pointer hover:bg-accent/50 transition-colors group"
-                onClick={() => window.open(`https://www.flightradar24.com/${airport.code.toLowerCase()}`, "_blank", "noopener,noreferrer")}
+                onClick={() => window.open(`https://globe.adsbexchange.com/?airport=${airport.code}`, "_blank", "noopener,noreferrer")}
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -140,7 +140,7 @@ export default function Flights() {
                 className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer"
                 onClick={() => {
                   window.open(
-                    `https://www.flightradar24.com/${flight.flight.replace(" ", "")}`,
+                    `https://globe.adsbexchange.com/?callsign=${flight.flight.replace(" ", "")}`,
                     "_blank"
                   );
                 }}

@@ -40,13 +40,13 @@ export default function Earthquakes() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const openFullMap = () => {
-    window.open("https://www.volcanodiscovery.com/earthquakes/today.html", "_blank", "noopener,noreferrer");
+    window.open("https://www.arcgis.com/apps/dashboards/c8af9c5411814584b460cc87cb7c3780", "_blank", "noopener,noreferrer");
   };
 
   const searchLocation = () => {
     if (searchQuery.trim()) {
       window.open(
-        `https://www.volcanodiscovery.com/earthquakes/today.html#${encodeURIComponent(searchQuery)}`,
+        `https://www.arcgis.com/apps/dashboards/c8af9c5411814584b460cc87cb7c3780`,
         "_blank",
         "noopener,noreferrer"
       );
@@ -71,9 +71,9 @@ export default function Earthquakes() {
         <section className="w-full">
           <div className="relative w-full h-[400px] sm:h-[500px] bg-muted rounded-lg overflow-hidden">
             <iframe
-              src="https://www.volcanodiscovery.com/earthquakes/today.html"
+              src="https://www.arcgis.com/apps/dashboards/c8af9c5411814584b460cc87cb7c3780"
               className="w-full h-full border-0"
-              title="VolcanoDiscovery Earthquake Map"
+              title="ArcGIS Earthquake Dashboard"
             />
             <Button 
               onClick={openFullMap}

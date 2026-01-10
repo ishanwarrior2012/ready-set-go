@@ -1,6 +1,7 @@
-// SafeTrack Service Worker v1.0.0
-const CACHE_NAME = "safetrack-v1";
-const RUNTIME_CACHE = "safetrack-runtime";
+// SafeTrack Service Worker v1.1.0
+const CACHE_VERSION = "v1.1";
+const CACHE_NAME = `safetrack-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `safetrack-runtime-${CACHE_VERSION}`;
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [

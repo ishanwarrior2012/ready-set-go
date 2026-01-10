@@ -10,6 +10,7 @@ import {
   Ship,
   Mountain,
   Activity,
+  Orbit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +48,7 @@ const trackingSubmenu = [
   { label: "Marine", icon: Ship, path: "/marine" },
   { label: "Earthquakes", icon: Activity, path: "/earthquakes" },
   { label: "Volcanoes", icon: Mountain, path: "/volcanoes" },
+  { label: "ISS", icon: Orbit, path: "/iss" },
 ];
 
 export function BottomNavigation() {
@@ -62,7 +64,7 @@ export function BottomNavigation() {
   };
 
   const isTrackingActive = () => {
-    return ["/flights", "/marine", "/earthquakes", "/volcanoes"].some(p => 
+    return ["/flights", "/marine", "/earthquakes", "/volcanoes", "/iss"].some(p => 
       location.pathname.startsWith(p)
     );
   };

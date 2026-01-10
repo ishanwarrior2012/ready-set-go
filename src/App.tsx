@@ -17,6 +17,7 @@ const Flights = lazy(() => import("./pages/Flights"));
 const Marine = lazy(() => import("./pages/Marine"));
 const Earthquakes = lazy(() => import("./pages/Earthquakes"));
 const Volcanoes = lazy(() => import("./pages/Volcanoes"));
+const ISS = lazy(() => import("./pages/ISS"));
 const Weather = lazy(() => import("./pages/Weather"));
 const RadioPage = lazy(() => import("./pages/Radio"));
 const SearchPage = lazy(() => import("./pages/Search"));
@@ -77,6 +78,7 @@ const App = () => {
                       <Route path="/marine" element={<Marine />} />
                       <Route path="/earthquakes" element={<Earthquakes />} />
                       <Route path="/volcanoes" element={<Volcanoes />} />
+                      <Route path="/iss" element={<ISS />} />
                       <Route path="/weather" element={<Weather />} />
                       <Route path="/radio" element={<RadioPage />} />
                       <Route path="/search" element={<SearchPage />} />

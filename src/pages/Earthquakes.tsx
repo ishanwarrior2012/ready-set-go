@@ -39,14 +39,14 @@ function getMagnitudeColor(mag: number) {
 export default function Earthquakes() {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const openUSGS = () => {
-    window.open("https://earthquake.usgs.gov/earthquakes/map/", "_blank", "noopener,noreferrer");
+  const openFullMap = () => {
+    window.open("https://www.volcanodiscovery.com/earthquakes/today.html", "_blank", "noopener,noreferrer");
   };
 
   const searchLocation = () => {
     if (searchQuery.trim()) {
       window.open(
-        `https://earthquake.usgs.gov/earthquakes/map/?search=${encodeURIComponent(searchQuery)}`,
+        `https://www.volcanodiscovery.com/earthquakes/today.html#${encodeURIComponent(searchQuery)}`,
         "_blank",
         "noopener,noreferrer"
       );
@@ -71,12 +71,12 @@ export default function Earthquakes() {
         <section className="w-full">
           <div className="relative w-full h-[400px] sm:h-[500px] bg-muted rounded-lg overflow-hidden">
             <iframe
-              src="https://earthquake.usgs.gov/earthquakes/map/?extent=-89.09,-400.78125&extent=89.09,220.78125"
+              src="https://www.volcanodiscovery.com/earthquakes/today.html"
               className="w-full h-full border-0"
-              title="USGS Earthquake Map"
+              title="VolcanoDiscovery Earthquake Map"
             />
             <Button 
-              onClick={openUSGS}
+              onClick={openFullMap}
               className="absolute top-3 right-3 gap-2 bg-orange-500 hover:bg-orange-600 shadow-lg"
               size="sm"
             >

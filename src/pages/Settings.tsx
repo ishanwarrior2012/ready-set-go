@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -16,73 +17,42 @@ import {
   Moon,
   Sun,
   Monitor,
+  MapPin,
+  Download,
+  Trash2,
+  Mail,
+  MessageSquare,
+  Smartphone,
+  Volume2,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
-
-const settingsGroups = [
-  {
-    title: "Preferences",
-    items: [
-      {
-        icon: Bell,
-        label: "Notifications",
-        description: "Push notifications and alerts",
-        type: "link" as const,
-        path: "/notifications",
-      },
-      {
-        icon: Globe,
-        label: "Language",
-        description: "English (US)",
-        type: "link" as const,
-      },
-      {
-        icon: Ruler,
-        label: "Units",
-        description: "Metric (km, °C)",
-        type: "link" as const,
-      },
-    ],
-  },
-  {
-    title: "Data & Privacy",
-    items: [
-      {
-        icon: Shield,
-        label: "Privacy",
-        description: "Data and location settings",
-        type: "link" as const,
-      },
-      {
-        icon: Globe,
-        label: "Offline Mode",
-        description: "Download data for offline use",
-        type: "toggle" as const,
-        defaultValue: false,
-      },
-    ],
-  },
-  {
-    title: "Support",
-    items: [
-      {
-        icon: HelpCircle,
-        label: "Help & FAQ",
-        description: "Get help and answers",
-        type: "link" as const,
-      },
-      {
-        icon: Info,
-        label: "About",
-        description: "Version 1.0.0",
-        type: "link" as const,
-      },
-    ],
-  },
-];
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
+  const [language, setLanguage] = useState("en");
+  const [units, setUnits] = useState("metric");
+  const [offlineMode, setOfflineMode] = useState(false);
+  const [locationAccess, setLocationAccess] = useState(true);
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [vibrationEnabled, setVibrationEnabled] = useState(true);
 
   const themeOptions = [
     { value: "light" as const, icon: Sun, label: "Light" },
@@ -92,11 +62,11 @@ export default function Settings() {
 
   return (
     <Layout>
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <SettingsIcon className="h-5 w-5 text-primary" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <SettingsIcon className="h-6 w-6 text-primary" />
           </div>
           <div>
             <h1 className="font-heading text-xl font-bold">Settings</h1>
@@ -132,35 +102,213 @@ export default function Settings() {
           </div>
         </Card>
 
-        {/* Settings Groups */}
-        {settingsGroups.map((group) => (
-          <div key={group.title}>
-            <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">
-              {group.title}
-            </h2>
-            <Card className="divide-y">
-              {group.items.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-3 p-4"
-                >
-                  <item.icon className="h-5 w-5 text-muted-foreground" />
+        {/* Language & Units */}
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">
+            Regional
+          </h2>
+          <Card className="divide-y">
+            <div className="flex items-center gap-3 p-4">
+              <Globe className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Language</p>
+                <p className="text-sm text-muted-foreground">
+                  Display language
+                </p>
+              </div>
+              <Select value={language} onValueChange={setLanguage}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="es">Español</SelectItem>
+                  <SelectItem value="fr">Français</SelectItem>
+                  <SelectItem value="de">Deutsch</SelectItem>
+                  <SelectItem value="ja">日本語</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-3 p-4">
+              <Ruler className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Units</p>
+                <p className="text-sm text-muted-foreground">
+                  Measurement system
+                </p>
+              </div>
+              <Select value={units} onValueChange={setUnits}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="metric">Metric (km, °C)</SelectItem>
+                  <SelectItem value="imperial">Imperial (mi, °F)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </Card>
+        </div>
+
+        {/* Notifications */}
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">
+            Notifications
+          </h2>
+          <Card className="divide-y">
+            <div className="flex items-center gap-3 p-4">
+              <Bell className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Push Notifications</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive alerts on your device
+                </p>
+              </div>
+              <Switch checked={pushNotifications} onCheckedChange={setPushNotifications} />
+            </div>
+            <div className="flex items-center gap-3 p-4">
+              <Mail className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Email Notifications</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive email updates
+                </p>
+              </div>
+              <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
+            </div>
+            <div className="flex items-center gap-3 p-4">
+              <Volume2 className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Sound</p>
+                <p className="text-sm text-muted-foreground">
+                  Play sound for alerts
+                </p>
+              </div>
+              <Switch checked={soundEnabled} onCheckedChange={setSoundEnabled} />
+            </div>
+            <div className="flex items-center gap-3 p-4">
+              <Smartphone className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Vibration</p>
+                <p className="text-sm text-muted-foreground">
+                  Vibrate for alerts
+                </p>
+              </div>
+              <Switch checked={vibrationEnabled} onCheckedChange={setVibrationEnabled} />
+            </div>
+          </Card>
+        </div>
+
+        {/* Data & Privacy */}
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">
+            Data & Privacy
+          </h2>
+          <Card className="divide-y">
+            <div className="flex items-center gap-3 p-4">
+              <MapPin className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Location Access</p>
+                <p className="text-sm text-muted-foreground">
+                  Allow location for local data
+                </p>
+              </div>
+              <Switch checked={locationAccess} onCheckedChange={setLocationAccess} />
+            </div>
+            <div className="flex items-center gap-3 p-4">
+              <Download className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Offline Mode</p>
+                <p className="text-sm text-muted-foreground">
+                  Download data for offline use
+                </p>
+              </div>
+              <Switch checked={offlineMode} onCheckedChange={setOfflineMode} />
+            </div>
+            <div className="flex items-center gap-3 p-4">
+              <Shield className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Privacy Policy</p>
+                <p className="text-sm text-muted-foreground">
+                  View our privacy policy
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </Card>
+        </div>
+
+        {/* Support */}
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">
+            Support
+          </h2>
+          <Card className="divide-y">
+            <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+              <HelpCircle className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Help & FAQ</p>
+                <p className="text-sm text-muted-foreground">
+                  Get help and answers
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+              <MessageSquare className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Contact Support</p>
+                <p className="text-sm text-muted-foreground">
+                  Send us a message
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="flex items-center gap-3 p-4">
+              <Info className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">About</p>
+                <p className="text-sm text-muted-foreground">
+                  SafeTrack PWA v1.0.0
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Danger Zone */}
+        <div>
+          <h2 className="text-sm font-semibold text-destructive mb-2 px-1">
+            Danger Zone
+          </h2>
+          <Card className="border-destructive/50">
+            <Dialog>
+              <DialogTrigger asChild>
+                <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-destructive/10 transition-colors">
+                  <Trash2 className="h-5 w-5 text-destructive" />
                   <div className="flex-1">
-                    <p className="font-medium">{item.label}</p>
+                    <p className="font-medium text-destructive">Clear All Data</p>
                     <p className="text-sm text-muted-foreground">
-                      {item.description}
+                      Delete all saved favorites and preferences
                     </p>
                   </div>
-                  {item.type === "toggle" ? (
-                    <Switch defaultChecked={item.defaultValue} />
-                  ) : (
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                  )}
                 </div>
-              ))}
-            </Card>
-          </div>
-        ))}
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Clear All Data?</DialogTitle>
+                  <DialogDescription>
+                    This will permanently delete all your favorites, preferences, and cached data. This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline">Cancel</Button>
+                  <Button variant="destructive">Delete All</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </Card>
+        </div>
       </div>
     </Layout>
   );

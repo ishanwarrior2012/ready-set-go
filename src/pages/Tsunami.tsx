@@ -124,7 +124,7 @@ const Tsunami = () => {
         <section className="w-full">
           <div className="relative w-full h-[400px] sm:h-[500px] bg-muted rounded-lg overflow-hidden">
             <iframe
-              src="https://www.tsunami.gov/"
+              src="https://tsunami.coast.noaa.gov/"
               className="w-full h-full border-0"
               title="NOAA Tsunami Warning Center"
               sandbox="allow-scripts allow-same-origin allow-popups"

@@ -86,14 +86,14 @@ export function BottomNavigation() {
             className="fixed inset-0 z-40" 
             onClick={() => setShowTrackingMenu(false)} 
           />
-          <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-card border rounded-xl shadow-xl p-2 animate-fade-in">
-            <div className="grid grid-cols-4 gap-1">
+          <div className="fixed bottom-20 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 bg-card border rounded-xl shadow-xl p-2 animate-fade-in">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
               {trackingSubmenu.map((item) => (
                 <button
                   key={item.path}
                   onClick={() => handleSubmenuClick(item.path)}
                   className={cn(
-                    "flex flex-col items-center gap-1.5 p-3 rounded-lg transition-colors min-w-[72px]",
+                    "flex flex-col items-center gap-1.5 p-3 rounded-lg transition-colors",
                     location.pathname === item.path 
                       ? "bg-primary/10 text-primary" 
                       : "hover:bg-muted text-muted-foreground hover:text-foreground"

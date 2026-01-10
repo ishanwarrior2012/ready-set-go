@@ -12,8 +12,8 @@ import { z } from "zod";
 import { useNavigate } from "react-router-dom";
 
 const authSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().trim().email("Please enter a valid email address").max(255, "Email too long"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(128, "Password too long"),
 });
 
 function AuthPageContent() {

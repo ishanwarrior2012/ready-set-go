@@ -15,4 +15,28 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Enable source maps for production debugging
+    sourcemap: mode === "production" ? "hidden" : true,
+    // Optimize chunk size
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        // Manual chunk splitting for better caching
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router-dom"],
+          ui: ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-tabs"],
+          supabase: ["@supabase/supabase-js"],
+          charts: ["recharts"],
+        },
+      },
+    },
+    // Minification settings
+    minify: "esbuild",
+    target: "esnext",
+  },
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ["react", "react-dom", "react-router-dom"],
+  },
 }));

@@ -1,3 +1,6 @@
+# SafeTrack Robots.txt
+# https://www.robotstxt.org/robotstxt.html
+
 User-agent: Googlebot
 Allow: /
 
@@ -12,3 +15,12 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Disallow private/auth routes from indexing
+Disallow: /auth
+Disallow: /profile
+Disallow: /settings
+Disallow: /notifications
+
+# Sitemap location
+Sitemap: https://safetrack.lovable.app/sitemap.xml

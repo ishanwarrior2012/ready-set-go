@@ -11,15 +11,49 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const body = await req.json();
+    const { messages } = body;
+
+    // Input validation
+    if (!messages || !Array.isArray(messages)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid request: messages array required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Limit message count to prevent abuse
+    if (messages.length > 50) {
+      return new Response(
+        JSON.stringify({ error: "Too many messages in conversation" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate each message
+    for (const msg of messages) {
+      if (!msg.role || !msg.content || typeof msg.content !== "string") {
+        return new Response(
+          JSON.stringify({ error: "Invalid message format" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      // Limit message content length
+      if (msg.content.length > 10000) {
+        return new Response(
+          JSON.stringify({ error: "Message content too long" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY is not configured");
-      throw new Error("LOVABLE_API_KEY is not configured");
+      throw new Error("AI service is not configured");
     }
 
-    console.log("Processing chat request with", messages?.length, "messages");
+    console.log("Processing chat request with", messages.length, "messages");
 
     // System prompt for SafeTrack assistant
     const systemPrompt = `You are SafeTrack AI Assistant, a helpful and knowledgeable assistant for the SafeTrack app - a comprehensive tracking and monitoring platform. You can help users with:

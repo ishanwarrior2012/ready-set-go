@@ -14,7 +14,129 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          message: string
+          read: boolean | null
+          severity: Database["public"]["Enums"]["alert_severity"] | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean | null
+          severity?: Database["public"]["Enums"]["alert_severity"] | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          severity?: Database["public"]["Enums"]["alert_severity"] | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_alerts: {
+        Row: {
+          alert_type: Database["public"]["Enums"]["notification_type"]
+          config: Json | null
+          created_at: string
+          enabled: boolean | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_type: Database["public"]["Enums"]["notification_type"]
+          config?: Json | null
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_type?: Database["public"]["Enums"]["notification_type"]
+          config?: Json | null
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          item_data: Json | null
+          item_id: string
+          item_name: string
+          item_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_data?: Json | null
+          item_id: string
+          item_name: string
+          item_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_data?: Json | null
+          item_id?: string
+          item_name?: string
+          item_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +145,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      alert_severity: "low" | "medium" | "high" | "critical"
+      notification_type:
+        | "earthquake"
+        | "volcano"
+        | "flight"
+        | "marine"
+        | "weather"
+        | "system"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +279,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      alert_severity: ["low", "medium", "high", "critical"],
+      notification_type: [
+        "earthquake",
+        "volcano",
+        "flight",
+        "marine",
+        "weather",
+        "system",
+      ],
+    },
   },
 } as const

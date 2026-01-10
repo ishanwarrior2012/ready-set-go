@@ -79,15 +79,32 @@ export default function ISS() {
           </div>
         </section>
 
+        {/* NASA Live Stream */}
+        <section className="w-full space-y-3">
+          <div className="flex items-center gap-2">
+            <Rocket className="h-5 w-5 text-electric" />
+            <h2 className="text-lg font-semibold">NASA Live Stream</h2>
+          </div>
+          <div className="relative w-full aspect-video bg-muted rounded-lg overflow-hidden">
+            <iframe
+              src="https://www.youtube.com/embed/fO9e9jnhYK8"
+              className="w-full h-full border-0"
+              title="NASA Live Stream"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </section>
+
         {/* Quick Actions */}
         <section className="flex flex-wrap gap-2 justify-center">
           <Button 
             variant="outline" 
             className="gap-2"
-            onClick={openNASALive}
+            onClick={() => window.open("https://www.youtube.com/watch?v=fO9e9jnhYK8", "_blank")}
           >
             <Rocket className="h-4 w-4" />
-            NASA Live Stream
+            Open on YouTube
           </Button>
           <Button 
             variant="outline" 

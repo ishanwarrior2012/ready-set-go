@@ -68,14 +68,6 @@ export default function ISS() {
               title="ISS Live Tracker"
               allow="geolocation"
             />
-            <Button 
-              onClick={openFullScreen}
-              className="absolute top-3 right-3 gap-2 bg-electric hover:bg-electric/90 shadow-lg"
-              size="sm"
-            >
-              <ExternalLink className="h-4 w-4" />
-              <span className="hidden sm:inline">NASA Tracker</span>
-            </Button>
           </div>
         </section>
 

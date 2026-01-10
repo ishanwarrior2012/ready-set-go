@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { GuestGuard } from "@/components/auth/AuthGuard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,25 +9,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Shield, Plane, Ship, Mountain, Radio } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useNavigate } from "react-router-dom";
 
 const authSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-export default function AuthPage() {
+function AuthPageContent() {
   const navigate = useNavigate();
-  const { user, signIn, signUp, loading: authLoading } = useAuth();
+  const { signIn, signUp } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-
-  useEffect(() => {
-    if (user && !authLoading) {
-      navigate("/");
-    }
-  }, [user, authLoading, navigate]);
 
   const validateForm = () => {
     try {
@@ -81,14 +76,6 @@ export default function AuthPage() {
       toast.success("Account created! You can now sign in.");
     }
   };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
@@ -216,5 +203,13 @@ export default function AuthPage() {
         By continuing, you agree to our Terms of Service and Privacy Policy
       </p>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <GuestGuard>
+      <AuthPageContent />
+    </GuestGuard>
   );
 }

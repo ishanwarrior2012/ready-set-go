@@ -11,6 +11,7 @@ import {
   Mountain,
   Activity,
   Orbit,
+  Waves,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +49,7 @@ const trackingSubmenu = [
   { label: "Marine", icon: Ship, path: "/marine" },
   { label: "Earthquakes", icon: Activity, path: "/earthquakes" },
   { label: "Volcanoes", icon: Mountain, path: "/volcanoes" },
+  { label: "Tsunami", icon: Waves, path: "/tsunami" },
   { label: "ISS", icon: Orbit, path: "/iss" },
 ];
 
@@ -64,7 +66,7 @@ export function BottomNavigation() {
   };
 
   const isTrackingActive = () => {
-    return ["/flights", "/marine", "/earthquakes", "/volcanoes", "/iss"].some(p => 
+    return ["/flights", "/marine", "/earthquakes", "/volcanoes", "/tsunami", "/iss"].some(p => 
       location.pathname.startsWith(p)
     );
   };
@@ -89,7 +91,7 @@ export function BottomNavigation() {
             onClick={() => setShowTrackingMenu(false)} 
           />
           <div className="fixed bottom-20 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 bg-card border rounded-xl shadow-xl p-2 animate-fade-in">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1">
               {trackingSubmenu.map((item) => (
                 <button
                   key={item.path}

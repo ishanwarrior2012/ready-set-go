@@ -59,18 +59,6 @@ export default function ISS() {
           </p>
         </section>
 
-        {/* Embedded ISS Tracker Map */}
-        <section className="w-full">
-          <div className="relative w-full h-[400px] sm:h-[500px] bg-muted rounded-lg overflow-hidden">
-            <iframe
-              src="https://isstracker.pl/en"
-              className="w-full h-full border-0"
-              title="ISS Live Tracker"
-              allow="geolocation"
-            />
-          </div>
-        </section>
-
         {/* NASA Live Stream */}
         <section className="w-full space-y-3">
           <div className="flex items-center gap-2">

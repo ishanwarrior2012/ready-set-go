@@ -10,6 +10,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { LoadingPage } from "@/components/ui/LoadingSpinner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { AuthGuard, GuestGuard } from "@/components/auth/AuthGuard";
 
 // Lazy load pages for better performance
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -73,21 +74,24 @@ const App = () => {
                 <BrowserRouter>
                   <Suspense fallback={<LoadingPage />}>
                     <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/auth" element={<AuthPage />} />
-                      <Route path="/flights" element={<Flights />} />
-                      <Route path="/marine" element={<Marine />} />
-                      <Route path="/earthquakes" element={<Earthquakes />} />
-                      <Route path="/volcanoes" element={<Volcanoes />} />
-                      <Route path="/iss" element={<ISS />} />
-                      <Route path="/tsunami" element={<Tsunami />} />
-                      <Route path="/weather" element={<Weather />} />
-                      <Route path="/radio" element={<RadioPage />} />
-                      <Route path="/search" element={<SearchPage />} />
-                      <Route path="/favorites" element={<Favorites />} />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="/profile" element={<Profile />} />
-                      <Route path="/notifications" element={<Notifications />} />
+                      {/* Auth page - only for guests */}
+                      <Route path="/auth" element={<GuestGuard><AuthPage /></GuestGuard>} />
+                      
+                      {/* Protected routes - require authentication */}
+                      <Route path="/" element={<AuthGuard><Dashboard /></AuthGuard>} />
+                      <Route path="/flights" element={<AuthGuard><Flights /></AuthGuard>} />
+                      <Route path="/marine" element={<AuthGuard><Marine /></AuthGuard>} />
+                      <Route path="/earthquakes" element={<AuthGuard><Earthquakes /></AuthGuard>} />
+                      <Route path="/volcanoes" element={<AuthGuard><Volcanoes /></AuthGuard>} />
+                      <Route path="/iss" element={<AuthGuard><ISS /></AuthGuard>} />
+                      <Route path="/tsunami" element={<AuthGuard><Tsunami /></AuthGuard>} />
+                      <Route path="/weather" element={<AuthGuard><Weather /></AuthGuard>} />
+                      <Route path="/radio" element={<AuthGuard><RadioPage /></AuthGuard>} />
+                      <Route path="/search" element={<AuthGuard><SearchPage /></AuthGuard>} />
+                      <Route path="/favorites" element={<AuthGuard><Favorites /></AuthGuard>} />
+                      <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
+                      <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
+                      <Route path="/notifications" element={<AuthGuard><Notifications /></AuthGuard>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>

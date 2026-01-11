@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Shield, Plane, Ship, Mountain, Radio } from "lucide-react";
+import { Loader2, Shield, Plane, Ship, Mountain, Radio, Mail, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +23,8 @@ function AuthPageContent() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   const validateForm = () => {
     try {
@@ -51,7 +53,11 @@ function AuthPageContent() {
     setLoading(false);
 
     if (error) {
-      toast.error(error.message || "Failed to sign in");
+      if (error.message.includes("Email not confirmed")) {
+        toast.error("Please verify your email before signing in. Check your inbox.");
+      } else {
+        toast.error(error.message || "Failed to sign in");
+      }
     } else {
       toast.success("Welcome back!");
       navigate("/");
@@ -73,9 +79,44 @@ function AuthPageContent() {
         toast.error(error.message || "Failed to sign up");
       }
     } else {
-      toast.success("Account created! You can now sign in.");
+      setRegisteredEmail(email);
+      setShowVerificationMessage(true);
+      setEmail("");
+      setPassword("");
     }
   };
+
+  if (showVerificationMessage) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Mail className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Check your email</CardTitle>
+            <CardDescription className="mt-2">
+              We've sent a verification link to
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="font-medium text-foreground">{registeredEmail}</p>
+            <div className="flex items-center gap-2 rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+              <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
+              <span>Click the link in the email to verify your account</span>
+            </div>
+            <Button
+              variant="outline"
+              className="w-full mt-4"
+              onClick={() => setShowVerificationMessage(false)}
+            >
+              Back to Sign In
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">

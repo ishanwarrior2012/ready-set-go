@@ -211,8 +211,9 @@ export function useWeather(customLat?: number, customLon?: number) {
     }
   }, []);
   
-  const lat = customLat ?? geo.latitude ?? 40.7128; // Default to NYC
-  const lon = customLon ?? geo.longitude ?? -74.0060;
+  // Default to New Delhi, India when geolocation is unavailable
+  const lat = customLat ?? geo.latitude ?? 28.6139;
+  const lon = customLon ?? geo.longitude ?? 77.2090;
 
   const query = useQuery({
     queryKey: ["weather", lat, lon],

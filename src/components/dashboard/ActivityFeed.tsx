@@ -5,70 +5,40 @@ import {
   Flame,
   AlertTriangle,
   ChevronRight,
-  Plane,
-  Ship,
+  Waves,
   Cloud,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface ActivityItem {
-  id: string;
-  type: "earthquake" | "volcano" | "weather" | "flight" | "marine";
-  title: string;
-  location: string;
-  time: string;
-  severity?: "low" | "medium" | "high";
-}
-
-const activityData: ActivityItem[] = [
-  {
-    id: "1",
-    type: "earthquake",
-    title: "M5.2 Earthquake",
-    location: "Near Tokyo, Japan",
-    time: "12 min ago",
-    severity: "medium",
-  },
-  {
-    id: "2",
-    type: "volcano",
-    title: "Increased Activity",
-    location: "Mount Etna, Italy",
-    time: "1 hour ago",
-    severity: "high",
-  },
-  {
-    id: "3",
-    type: "weather",
-    title: "Storm Warning",
-    location: "Gulf of Mexico",
-    time: "2 hours ago",
-    severity: "high",
-  },
-  {
-    id: "4",
-    type: "flight",
-    title: "Delayed: UA 237",
-    location: "JFK → LAX",
-    time: "3 hours ago",
-    severity: "low",
-  },
-];
+import { useLiveActivity, ActivityItem } from "@/hooks/useLiveActivity";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const iconMap = {
   earthquake: Mountain,
   volcano: Flame,
   weather: AlertTriangle,
-  flight: Plane,
-  marine: Ship,
+  tsunami: Waves,
 };
 
 const colorMap = {
   earthquake: "bg-amber-500/10 text-amber-500",
   volcano: "bg-red-500/10 text-red-500",
   weather: "bg-sky-500/10 text-sky-500",
-  flight: "bg-electric/10 text-electric",
-  marine: "bg-cyan-500/10 text-cyan-500",
+  tsunami: "bg-blue-500/10 text-blue-500",
+};
+
+const linkMap = {
+  earthquake: "/earthquakes",
+  volcano: "/volcanoes",
+  weather: "/weather",
+  tsunami: "/tsunami",
+};
+
+const severityStyles = {
+  low: "",
+  medium: "border-l-2 border-l-amber-500",
+  high: "border-l-2 border-l-orange-500",
+  critical: "border-l-2 border-l-destructive bg-destructive/5",
 };
 
 interface ActivityFeedProps {
@@ -76,13 +46,68 @@ interface ActivityFeedProps {
   maxItems?: number;
 }
 
-export function ActivityFeed({ className, maxItems = 4 }: ActivityFeedProps) {
-  const items = activityData.slice(0, maxItems);
+export function ActivityFeed({ className, maxItems = 6 }: ActivityFeedProps) {
+  const { data: activities, isLoading, error } = useLiveActivity();
+
+  const items = activities?.slice(0, maxItems) || [];
+
+  if (isLoading) {
+    return (
+      <section className={className}>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-heading text-lg font-semibold flex items-center gap-2">
+            Recent Activity
+            <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
+          </h2>
+        </div>
+        <Card className="divide-y divide-border overflow-hidden">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-3 p-4">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="flex-1">
+                <Skeleton className="h-4 w-32 mb-2" />
+                <Skeleton className="h-3 w-48" />
+              </div>
+              <Skeleton className="h-3 w-16" />
+            </div>
+          ))}
+        </Card>
+      </section>
+    );
+  }
+
+  if (error || items.length === 0) {
+    return (
+      <section className={className}>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-heading text-lg font-semibold">Recent Activity</h2>
+          <Link
+            to="/notifications"
+            className="text-sm text-primary flex items-center gap-1 hover:underline"
+          >
+            View all
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <Card className="p-8 text-center">
+          <Cloud className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+          <p className="text-muted-foreground">No recent activity</p>
+          <p className="text-xs text-muted-foreground/70">Check back later for updates</p>
+        </Card>
+      </section>
+    );
+  }
 
   return (
     <section className={className}>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-heading text-lg font-semibold">Recent Activity</h2>
+        <h2 className="font-heading text-lg font-semibold flex items-center gap-2">
+          Recent Activity
+          <span className="flex items-center gap-1 text-xs font-normal text-muted-foreground">
+            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+            Live
+          </span>
+        </h2>
         <Link
           to="/notifications"
           className="text-sm text-primary flex items-center gap-1 hover:underline"
@@ -94,10 +119,16 @@ export function ActivityFeed({ className, maxItems = 4 }: ActivityFeedProps) {
       <Card className="divide-y divide-border overflow-hidden">
         {items.map((item) => {
           const Icon = iconMap[item.type] || Cloud;
+          const linkTo = linkMap[item.type] || "/";
+          
           return (
-            <div
+            <Link
               key={item.id}
-              className="flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+              to={linkTo}
+              className={cn(
+                "flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors cursor-pointer",
+                severityStyles[item.severity]
+              )}
             >
               <div
                 className={cn(
@@ -117,13 +148,16 @@ export function ActivityFeed({ className, maxItems = 4 }: ActivityFeedProps) {
                 <span className="text-xs text-muted-foreground whitespace-nowrap">
                   {item.time}
                 </span>
-                {item.severity === "high" && (
-                  <span className="text-xs text-destructive font-medium">
-                    Alert
+                {(item.severity === "high" || item.severity === "critical") && (
+                  <span className={cn(
+                    "text-xs font-medium",
+                    item.severity === "critical" ? "text-destructive" : "text-orange-500"
+                  )}>
+                    {item.severity === "critical" ? "Critical" : "Alert"}
                   </span>
                 )}
               </div>
-            </div>
+            </Link>
           );
         })}
       </Card>

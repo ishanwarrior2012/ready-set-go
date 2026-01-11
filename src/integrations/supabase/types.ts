@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      cached_data: {
+        Row: {
+          cache_key: string
+          cache_type: string
+          created_at: string
+          data: Json
+          expires_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          cache_key: string
+          cache_type: string
+          created_at?: string
+          data?: Json
+          expires_at: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          cache_key?: string
+          cache_type?: string
+          created_at?: string
+          data?: Json
+          expires_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -137,6 +167,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_bookmarks: {
+        Row: {
+          bookmark_type: string
+          created_at: string
+          description: string | null
+          folder: string | null
+          id: string
+          is_pinned: boolean | null
+          latitude: number | null
+          longitude: number | null
+          metadata: Json | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bookmark_type: string
+          created_at?: string
+          description?: string | null
+          folder?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          metadata?: Json | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bookmark_type?: string
+          created_at?: string
+          description?: string | null
+          folder?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          metadata?: Json | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_favorites: {
         Row: {
           created_at: string
@@ -184,6 +259,66 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          auto_refresh_enabled: boolean | null
+          created_at: string
+          default_latitude: number | null
+          default_longitude: number | null
+          default_map_layer: string | null
+          default_zoom_level: number | null
+          email_notifications_enabled: boolean | null
+          id: string
+          language: string | null
+          push_notifications_enabled: boolean | null
+          refresh_interval_seconds: number | null
+          show_offline_data: boolean | null
+          sound_enabled: boolean | null
+          theme: string | null
+          timezone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_refresh_enabled?: boolean | null
+          created_at?: string
+          default_latitude?: number | null
+          default_longitude?: number | null
+          default_map_layer?: string | null
+          default_zoom_level?: number | null
+          email_notifications_enabled?: boolean | null
+          id?: string
+          language?: string | null
+          push_notifications_enabled?: boolean | null
+          refresh_interval_seconds?: number | null
+          show_offline_data?: boolean | null
+          sound_enabled?: boolean | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_refresh_enabled?: boolean | null
+          created_at?: string
+          default_latitude?: number | null
+          default_longitude?: number | null
+          default_map_layer?: string | null
+          default_zoom_level?: number | null
+          email_notifications_enabled?: boolean | null
+          id?: string
+          language?: string | null
+          push_notifications_enabled?: boolean | null
+          refresh_interval_seconds?: number | null
+          show_offline_data?: boolean | null
+          sound_enabled?: boolean | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

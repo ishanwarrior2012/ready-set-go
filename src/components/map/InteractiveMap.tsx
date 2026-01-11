@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Layers, LocateFixed, Minus, Plus, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 interface MapLayer {
   id: string;
@@ -94,7 +95,7 @@ export function InteractiveMap({
         setIsLoaded(true);
         onMapReady?.(map);
       } catch (error) {
-        console.error("Failed to load map:", error);
+        logger.error("Failed to load map:", error);
       }
     };
 

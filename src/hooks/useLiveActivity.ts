@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
+import { logger } from "@/lib/logger";
 
 export interface ActivityItem {
   id: string;
@@ -37,8 +39,9 @@ async function fetchLiveActivity(): Promise<ActivityItem[]> {
 
   // Fetch earthquakes from USGS (significant earthquakes in last 24h)
   try {
-    const earthquakeResponse = await fetch(
-      "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson"
+    const earthquakeResponse = await fetchWithTimeout(
+      "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson",
+      { timeoutMs: 10000 }
     );
     if (earthquakeResponse.ok) {
       const data = await earthquakeResponse.json();
@@ -64,13 +67,14 @@ async function fetchLiveActivity(): Promise<ActivityItem[]> {
       }
     }
   } catch (error) {
-    console.error("Failed to fetch earthquakes:", error);
+    logger.error("Failed to fetch earthquakes:", error);
   }
 
   // Fetch tsunami warnings from NOAA (if available)
   try {
-    const tsunamiResponse = await fetch(
-      "https://www.tsunami.gov/events/xml/PHEBAtom.xml"
+    const tsunamiResponse = await fetchWithTimeout(
+      "https://www.tsunami.gov/events/xml/PHEBAtom.xml",
+      { timeoutMs: 10000 }
     );
     if (tsunamiResponse.ok) {
       const text = await tsunamiResponse.text();
@@ -90,15 +94,16 @@ async function fetchLiveActivity(): Promise<ActivityItem[]> {
         }
       }
     }
-  } catch (error) {
+  } catch {
     // NOAA feed may have CORS issues, silently fail
   }
 
   // Fetch volcano data from Smithsonian
   try {
     // Using USGS volcano alerts as fallback
-    const volcanoResponse = await fetch(
-      "https://volcanoes.usgs.gov/hans2/api/volcanoAlerts"
+    const volcanoResponse = await fetchWithTimeout(
+      "https://volcanoes.usgs.gov/hans2/api/volcanoAlerts",
+      { timeoutMs: 10000 }
     );
     if (volcanoResponse.ok) {
       const data = await volcanoResponse.json();
@@ -119,7 +124,7 @@ async function fetchLiveActivity(): Promise<ActivityItem[]> {
         }
       }
     }
-  } catch (error) {
+  } catch {
     // Volcano API may have issues, silently fail
   }
 

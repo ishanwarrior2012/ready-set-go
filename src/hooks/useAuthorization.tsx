@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { logger } from "@/lib/logger";
 
 export type AppRole = "admin" | "moderator" | "user";
 
@@ -33,13 +34,13 @@ export function useAuthorization(): UseAuthorizationReturn {
         .eq("user_id", user.id);
 
       if (error) {
-        console.error("Error fetching roles:", error);
+        logger.error("Error fetching roles:", error);
         setRoles([]);
       } else {
         setRoles(data?.map((r) => r.role as AppRole) || []);
       }
     } catch (err) {
-      console.error("Error fetching roles:", err);
+      logger.error("Error fetching roles:", err);
       setRoles([]);
     } finally {
       setLoading(false);

@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import type { Json } from "@/integrations/supabase/types";
+
 export type NotificationType = "earthquake" | "volcano" | "flight" | "marine" | "weather" | "system";
 export type AlertSeverity = "low" | "medium" | "high" | "critical";
 
@@ -46,7 +48,7 @@ export function useNotifications() {
       setNotifications(typedData);
       setUnreadCount(typedData.filter((n) => !n.read).length);
     } catch (error) {
-      console.error("Error fetching notifications:", error);
+      logger.error("Error fetching notifications:", error);
     } finally {
       setLoading(false);
     }
@@ -105,7 +107,7 @@ export function useNotifications() {
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
-      console.error("Error marking notification as read:", error);
+      logger.error("Error marking notification as read:", error);
     }
   };
 
@@ -124,7 +126,7 @@ export function useNotifications() {
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch (error) {
-      console.error("Error marking all as read:", error);
+      logger.error("Error marking all as read:", error);
     }
   };
 
@@ -148,7 +150,7 @@ export function useNotifications() {
         return prev.filter((n) => n.id !== notificationId);
       });
     } catch (error) {
-      console.error("Error deleting notification:", error);
+      logger.error("Error deleting notification:", error);
     }
   };
 
@@ -173,7 +175,7 @@ export function useNotifications() {
 
       if (error) throw error;
     } catch (error) {
-      console.error("Error creating notification:", error);
+      logger.error("Error creating notification:", error);
     }
   };
 

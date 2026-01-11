@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { 
   Search as SearchIcon, 
   Mic, 
+  MicOff,
   Sparkles, 
   Send, 
   Bot, 
@@ -17,10 +18,14 @@ import {
   Radio,
   History,
   X,
-  Loader2
+  Loader2,
+  AudioWaveform
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAIChat, ChatMessage } from "@/hooks/useAIChat";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const suggestedQueries = [
   { icon: Mountain, text: "Show me recent earthquakes above 5.0 magnitude", category: "Earthquakes" },
@@ -39,7 +44,6 @@ const quickActions = [
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
-  const [isListening, setIsListening] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>(() => {
     const saved = localStorage.getItem("safetrack-search-history");
     return saved ? JSON.parse(saved) : [];
@@ -47,6 +51,16 @@ export default function SearchPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   
   const { messages, isLoading, sendMessage, clearMessages } = useAIChat();
+  
+  const { isRecording, isProcessing, startRecording, stopRecording, cancelRecording } = useVoiceInput({
+    onTranscript: (text) => {
+      setQuery(text);
+      toast.success("Voice captured!", { description: text.slice(0, 50) + (text.length > 50 ? "..." : "") });
+    },
+    onError: (error) => {
+      toast.error("Voice input failed", { description: error });
+    }
+  });
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -67,40 +81,26 @@ export default function SearchPage() {
     await sendMessage(currentQuery);
   };
 
-  const handleVoiceInput = () => {
-    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
-      return;
-    }
-
-    setIsListening(!isListening);
-    
-    if (!isListening) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setQuery(transcript);
-        setIsListening(false);
-      };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognition.start();
+  const handleVoiceToggle = async () => {
+    if (isRecording) {
+      await stopRecording();
+    } else {
+      try {
+        await startRecording();
+        toast.info("Listening...", { description: "Speak now, then tap again to stop" });
+      } catch {
+        toast.error("Microphone access denied", { 
+          description: "Please allow microphone access in your browser settings" 
+        });
+      }
     }
   };
 
   const clearChat = () => {
     clearMessages();
   };
+
+  const isVoiceBusy = isRecording || isProcessing;
 
   return (
     <Layout showFab={false}>
@@ -140,6 +140,10 @@ export default function SearchPage() {
                 </h2>
                 <p className="text-muted-foreground text-sm">
                   Powered by Gemini AI - I can help you track flights, ships, earthquakes, and more
+                </p>
+                <p className="text-primary text-sm mt-2 flex items-center justify-center gap-1">
+                  <Mic className="h-4 w-4" />
+                  Tap the mic to speak your question
                 </p>
               </div>
 
@@ -247,6 +251,43 @@ export default function SearchPage() {
           )}
         </div>
 
+        {/* Recording Indicator */}
+        {isRecording && (
+          <div className="px-4 py-2">
+            <Card className="p-3 bg-destructive/10 border-destructive/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <AudioWaveform className="h-5 w-5 text-destructive animate-pulse" />
+                    <span className="absolute -top-1 -right-1 h-2 w-2 bg-destructive rounded-full animate-ping" />
+                  </div>
+                  <span className="text-sm font-medium text-destructive">Recording... Tap mic to stop</span>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={cancelRecording}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Processing Indicator */}
+        {isProcessing && (
+          <div className="px-4 py-2">
+            <Card className="p-3 bg-primary/10 border-primary/20">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                <span className="text-sm font-medium text-primary">Transcribing your voice...</span>
+              </div>
+            </Card>
+          </div>
+        )}
+
         {/* Input Area */}
         <section className="px-4 py-4">
           <Card className="p-2">
@@ -259,19 +300,29 @@ export default function SearchPage() {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 className="flex-1 border-0 bg-transparent focus-visible:ring-0"
-                disabled={isLoading}
+                disabled={isLoading || isVoiceBusy}
               />
               <Button 
                 size="icon" 
-                variant={isListening ? "default" : "ghost"}
-                onClick={handleVoiceInput}
-                disabled={isLoading}
+                variant={isRecording ? "destructive" : isProcessing ? "secondary" : "ghost"}
+                onClick={handleVoiceToggle}
+                disabled={isLoading || isProcessing}
+                className={cn(
+                  "relative",
+                  isRecording && "animate-pulse"
+                )}
               >
-                <Mic className={`h-5 w-5 ${isListening ? "animate-pulse" : ""}`} />
+                {isProcessing ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : isRecording ? (
+                  <MicOff className="h-5 w-5" />
+                ) : (
+                  <Mic className="h-5 w-5" />
+                )}
               </Button>
               <Button 
                 size="icon" 
-                disabled={!query.trim() || isLoading}
+                disabled={!query.trim() || isLoading || isVoiceBusy}
                 onClick={handleSend}
               >
                 {isLoading ? (

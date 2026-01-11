@@ -53,14 +53,9 @@ export default function SearchPage() {
   const { messages, isLoading, sendMessage, clearMessages } = useAIChat();
   
   const { isRecording, isProcessing, startRecording, stopRecording, cancelRecording } = useVoiceInput({
-    onTranscript: async (text) => {
-      // Auto-send to AI after transcription
-      const newHistory = [text, ...searchHistory.filter(h => h !== text)].slice(0, 5);
-      setSearchHistory(newHistory);
-      localStorage.setItem("safetrack-search-history", JSON.stringify(newHistory));
-      
-      toast.success("Sending to AI...", { description: text.slice(0, 50) + (text.length > 50 ? "..." : "") });
-      await sendMessage(text);
+    onTranscript: (text) => {
+      setQuery(text);
+      toast.success("Voice captured!", { description: text.slice(0, 50) + (text.length > 50 ? "..." : "") });
     },
     onError: (error) => {
       toast.error("Voice input failed", { description: error });

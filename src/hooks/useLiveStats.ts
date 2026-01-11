@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
+import { logger } from "@/lib/logger";
 
 interface LiveStats {
   activeFlights: number;
@@ -13,14 +15,17 @@ interface LiveStats {
 async function fetchFlightCount(): Promise<number> {
   try {
     // OpenSky Network API - get all states (flights currently in the air)
-    const response = await fetch("https://opensky-network.org/api/states/all?extended=0");
+    const response = await fetchWithTimeout(
+      "https://opensky-network.org/api/states/all?extended=0",
+      { timeoutMs: 15000 }
+    );
     if (!response.ok) {
       throw new Error("Failed to fetch flight data");
     }
     const data = await response.json();
     return data.states?.length || 0;
   } catch (error) {
-    console.error("Flight API error:", error);
+    logger.error("Flight API error:", error);
     // Return estimated fallback on error
     return Math.floor(Math.random() * 2000) + 10000;
   }
@@ -30,8 +35,9 @@ async function fetchFlightCount(): Promise<number> {
 async function fetchEarthquakeData(): Promise<{ count: number; maxMagnitude: number | null }> {
   try {
     // USGS API - earthquakes in the last 24 hours, magnitude 2.5+
-    const response = await fetch(
-      "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson"
+    const response = await fetchWithTimeout(
+      "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson",
+      { timeoutMs: 10000 }
     );
     if (!response.ok) {
       throw new Error("Failed to fetch earthquake data");
@@ -53,7 +59,7 @@ async function fetchEarthquakeData(): Promise<{ count: number; maxMagnitude: num
       maxMagnitude,
     };
   } catch (error) {
-    console.error("Earthquake API error:", error);
+    logger.error("Earthquake API error:", error);
     return { count: 0, maxMagnitude: null };
   }
 }

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useGeolocation } from "./useGeolocation";
+import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 
 export interface CurrentWeather {
   temperature: number;
@@ -67,7 +68,7 @@ async function fetchWeatherData(lat: number, lon: number): Promise<WeatherData> 
   url.searchParams.set("timezone", "auto");
   url.searchParams.set("forecast_days", "7");
 
-  const response = await fetch(url.toString());
+  const response = await fetchWithTimeout(url.toString(), { timeoutMs: 10000 });
   if (!response.ok) {
     throw new Error("Failed to fetch weather data");
   }
@@ -77,8 +78,9 @@ async function fetchWeatherData(lat: number, lon: number): Promise<WeatherData> 
   // Get location name using reverse geocoding
   let locationName = "Current Location";
   try {
-    const geoResponse = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
+    const geoResponse = await fetchWithTimeout(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+      { timeoutMs: 5000 }
     );
     if (geoResponse.ok) {
       const geoData = await geoResponse.json();

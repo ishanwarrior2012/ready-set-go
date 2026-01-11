@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export interface ChatMessage {
   id: string;
@@ -41,7 +42,7 @@ export function useAIChat() {
       });
 
       if (error) {
-        console.error("AI chat error:", error);
+        logger.error("AI chat error:", error);
         throw new Error(error.message || "Failed to get response");
       }
 
@@ -58,7 +59,7 @@ export function useAIChat() {
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      console.error("Error sending message:", error);
+      logger.error("Error sending message:", error);
       
       const errorMessage = error instanceof Error ? error.message : "An error occurred";
       

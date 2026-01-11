@@ -23,6 +23,7 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 interface RadioStation {
   name: string;
@@ -145,7 +146,7 @@ export default function RadioPage() {
         setIsPlaying(true);
         toast.success(`Now playing: ${station.name}`);
       } catch (error) {
-        console.error("Error playing stream:", error);
+        logger.error("Error playing stream:", error);
         toast.error("Could not play this station. Try another one.");
         setIsPlaying(false);
       } finally {

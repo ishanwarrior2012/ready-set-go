@@ -31,11 +31,12 @@ const passwordSchema = z.object({
 function AuthPageContent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { signIn, signUp, resetPassword, updatePassword, user } = useAuth();
+  const { signIn, signUp, resetPassword, updatePassword, resendVerificationEmail, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
   const [showResetSentMessage, setShowResetSentMessage] = useState(false);
@@ -230,6 +231,18 @@ function AuthPageContent() {
     );
   }
 
+  const handleResendVerification = async () => {
+    setResending(true);
+    const { error } = await resendVerificationEmail(registeredEmail);
+    setResending(false);
+
+    if (error) {
+      toast.error(error.message || "Failed to resend verification email");
+    } else {
+      toast.success("Verification email sent! Check your inbox.");
+    }
+  };
+
   if (showVerificationMessage) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
@@ -249,9 +262,21 @@ function AuthPageContent() {
               <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
               <span>Click the link in the email to verify your account</span>
             </div>
+            <p className="text-sm text-muted-foreground">
+              Didn't receive the email? Check your spam folder or
+            </p>
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={handleResendVerification}
+              disabled={resending}
+            >
+              {resending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Resend Verification Email
+            </Button>
             <Button
               variant="outline"
-              className="w-full mt-4"
+              className="w-full"
               onClick={() => setShowVerificationMessage(false)}
             >
               Back to Sign In

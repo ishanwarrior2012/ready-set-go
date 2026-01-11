@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,38 @@ serve(async (req) => {
   }
 
   try {
+    // Validate Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.error("Missing or invalid Authorization header");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Missing authentication token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Create Supabase client and verify the JWT via getUser
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Verify user by fetching their data - this validates the JWT
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !userData?.user) {
+      console.error("JWT verification failed:", userError?.message || "Invalid user");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Invalid authentication token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userId = userData.user.id;
+    console.log("Authenticated user:", userId);
+
     const body = await req.json();
     const { messages } = body;
 
@@ -53,7 +86,7 @@ serve(async (req) => {
       throw new Error("AI service is not configured");
     }
 
-    console.log("Processing chat request with", messages.length, "messages");
+    console.log("Processing chat request for user", userId, "with", messages.length, "messages");
 
     // System prompt for SafeTrack assistant
     const systemPrompt = `You are SafeTrack AI Assistant, a helpful and knowledgeable assistant for the SafeTrack app - a comprehensive tracking and monitoring platform. You can help users with:
@@ -116,7 +149,7 @@ Current app features:
     }
 
     const data = await response.json();
-    console.log("AI response received successfully");
+    console.log("AI response received successfully for user:", userId);
 
     const generatedText = data.choices?.[0]?.message?.content || 
       "I apologize, but I couldn't generate a response. Please try again.";

@@ -47,11 +47,11 @@ function useServiceWorker() {
       window.addEventListener("load", () => {
         navigator.serviceWorker
           .register("/sw.js")
-          .then((registration) => {
-            console.log("SW registered:", registration.scope);
+          .then(() => {
+            // Service worker registered successfully - no logging in production
           })
-          .catch((error) => {
-            console.log("SW registration failed:", error);
+          .catch(() => {
+            // Service worker registration failed - no logging in production
           });
       });
     }

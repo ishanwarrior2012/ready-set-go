@@ -74,6 +74,7 @@ export default function Earthquakes() {
               src="https://www.arcgis.com/apps/dashboards/c8af9c5411814584b460cc87cb7c3780"
               className="w-full h-full border-0"
               title="ArcGIS Earthquake Dashboard"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
             />
             <Button 
               onClick={openFullMap}

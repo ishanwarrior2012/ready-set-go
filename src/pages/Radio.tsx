@@ -199,6 +199,7 @@ export default function RadioPage() {
               className="w-full h-full border-0"
               title="Radio Garden"
               allow="autoplay"
+              sandbox="allow-scripts allow-same-origin allow-popups"
             />
             <Button 
               onClick={openRadioGarden}

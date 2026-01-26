@@ -68,6 +68,7 @@ export default function Flights() {
               className="w-full h-full border-0"
               title="ADS-B Exchange Live Globe"
               allow="geolocation"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
             />
             <Button 
               onClick={openFullScreen}

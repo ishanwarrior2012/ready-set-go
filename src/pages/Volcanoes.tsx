@@ -109,6 +109,7 @@ export default function Volcanoes() {
               src="https://www.arcgis.com/apps/View/index.html?appid=b6da6146b01a4637a8f33bf5245e10fc"
               className="w-full h-full border-0"
               title="ArcGIS Volcano Map"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
             />
             <Button 
               onClick={openVolcanoMap}

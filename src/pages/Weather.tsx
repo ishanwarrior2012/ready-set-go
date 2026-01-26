@@ -96,6 +96,7 @@ export default function Weather() {
               src="https://embed.windy.com/embed2.html?lat=40&lon=-74&zoom=4&level=surface&overlay=temp&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=true&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1"
               className="w-full h-full border-0"
               title="Windy Weather Map"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
             />
             <Button 
               onClick={openWindy}

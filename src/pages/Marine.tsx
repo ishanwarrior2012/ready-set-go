@@ -96,6 +96,7 @@ export default function Marine() {
               src="https://www.marinetraffic.com/en/ais/embed/zoom:2/centery:25/centerx:-12/maptype:4/shownames:false/mmsi:0/shipid:0/fleet:/fleet_id:/vtypes:/showmenu:/remember:false"
               className="w-full h-full border-0"
               title="MarineTraffic Live Map"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
             />
             <Button 
               onClick={openMarineTraffic}

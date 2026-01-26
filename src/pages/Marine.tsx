@@ -162,7 +162,7 @@ export default function Marine() {
               <Card
                 key={port.code}
                 className="p-4 cursor-pointer hover:bg-accent/50 transition-colors group"
-                onClick={() => window.open(`https://www.marinetraffic.com/en/ais/details/ports/${port.code}`, "_blank")}
+                onClick={() => window.open(`https://www.marinetraffic.com/en/ais/details/ports/${port.code}`, "_blank", "noopener,noreferrer")}
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -187,7 +187,7 @@ export default function Marine() {
               <div
                 key={index}
                 className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => window.open(`https://www.marinetraffic.com/en/ais/index/search/all/keyword:${encodeURIComponent(vessel.name)}`, "_blank")}
+                onClick={() => window.open(`https://www.marinetraffic.com/en/ais/index/search/all/keyword:${encodeURIComponent(vessel.name)}`, "_blank", "noopener,noreferrer")}
               >
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">

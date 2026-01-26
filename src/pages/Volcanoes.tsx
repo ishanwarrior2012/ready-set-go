@@ -196,7 +196,7 @@ export default function Volcanoes() {
                   <div 
                     key={index} 
                     className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors"
-                    onClick={() => window.open(`https://volcano.si.edu/search_volcano.cfm?search=${encodeURIComponent(volcano.name)}`, "_blank")}
+                    onClick={() => window.open(`https://volcano.si.edu/search_volcano.cfm?search=${encodeURIComponent(volcano.name)}`, "_blank", "noopener,noreferrer")}
                   >
                     <div
                       className={`flex h-10 w-10 items-center justify-center rounded-full ${getAlertColor(volcano.alert)}`}
@@ -226,7 +226,7 @@ export default function Volcanoes() {
                   <div 
                     key={index} 
                     className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors"
-                    onClick={() => window.open(`https://volcano.si.edu/search_volcano.cfm?search=${encodeURIComponent(eruption.name)}`, "_blank")}
+                    onClick={() => window.open(`https://volcano.si.edu/search_volcano.cfm?search=${encodeURIComponent(eruption.name)}`, "_blank", "noopener,noreferrer")}
                   >
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900">
                       <Flame className="h-5 w-5 text-red-500" />

@@ -90,14 +90,15 @@ const Tsunami = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const openTsunamiMap = () => {
-    window.open("https://www.tsunami.gov/", "_blank");
+    window.open("https://www.tsunami.gov/", "_blank", "noopener,noreferrer");
   };
 
   const searchTsunami = () => {
     if (searchQuery.trim()) {
       window.open(
         `https://www.ngdc.noaa.gov/hazel/view/hazards/tsunami/event-search?searchText=${encodeURIComponent(searchQuery)}`,
-        "_blank"
+        "_blank",
+        "noopener,noreferrer"
       );
     }
   };
@@ -230,7 +231,7 @@ const Tsunami = () => {
               <Card 
                 key={tsunami.id} 
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => window.open(`https://www.ngdc.noaa.gov/hazel/view/hazards/tsunami/event-search?searchText=${encodeURIComponent(tsunami.location)}`, "_blank")}
+                onClick={() => window.open(`https://www.ngdc.noaa.gov/hazel/view/hazards/tsunami/event-search?searchText=${encodeURIComponent(tsunami.location)}`, "_blank", "noopener,noreferrer")}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">

@@ -164,7 +164,7 @@ export default function Earthquakes() {
                   <div 
                     key={index} 
                     className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors"
-                    onClick={() => window.open(`https://earthquake.usgs.gov/earthquakes/map/?extent=${quake.coords}`, "_blank")}
+                    onClick={() => window.open(`https://earthquake.usgs.gov/earthquakes/map/?extent=${quake.coords}`, "_blank", "noopener,noreferrer")}
                   >
                     <div
                       className={`flex h-10 w-10 items-center justify-center rounded-full ${getMagnitudeColor(quake.magnitude)}`}
@@ -195,7 +195,7 @@ export default function Earthquakes() {
                   <div 
                     key={index} 
                     className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors"
-                    onClick={() => window.open(`https://earthquake.usgs.gov/earthquakes/map/?extent=${quake.coords}`, "_blank")}
+                    onClick={() => window.open(`https://earthquake.usgs.gov/earthquakes/map/?extent=${quake.coords}`, "_blank", "noopener,noreferrer")}
                   >
                     <div
                       className={`flex h-10 w-10 items-center justify-center rounded-full ${getMagnitudeColor(quake.magnitude)}`}

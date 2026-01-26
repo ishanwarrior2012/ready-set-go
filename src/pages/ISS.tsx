@@ -81,7 +81,7 @@ export default function ISS() {
           <Button 
             variant="outline" 
             className="gap-2"
-            onClick={() => window.open("https://www.youtube.com/watch?v=fO9e9jnhYK8", "_blank")}
+            onClick={() => window.open("https://www.youtube.com/watch?v=fO9e9jnhYK8", "_blank", "noopener,noreferrer")}
           >
             <Rocket className="h-4 w-4" />
             Open on YouTube
@@ -89,7 +89,7 @@ export default function ISS() {
           <Button 
             variant="outline" 
             className="gap-2"
-            onClick={() => window.open("https://spotthestation.nasa.gov/", "_blank")}
+            onClick={() => window.open("https://spotthestation.nasa.gov/", "_blank", "noopener,noreferrer")}
           >
             <Clock className="h-4 w-4" />
             Spot the Station

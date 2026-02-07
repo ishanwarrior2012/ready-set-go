@@ -4,7 +4,7 @@ import { logger } from "@/lib/logger";
 
 export interface ActivityItem {
   id: string;
-  type: "earthquake" | "volcano" | "weather" | "tsunami";
+  type: "earthquake" | "volcano" | "weather" | "tsunami" | "news";
   title: string;
   location: string;
   time: string;
@@ -126,6 +126,42 @@ async function fetchLiveActivity(): Promise<ActivityItem[]> {
     }
   } catch {
     // Volcano API may have issues, silently fail
+  }
+
+  // Fetch latest world news from GDELT
+  try {
+    const newsResponse = await fetchWithTimeout(
+      "https://api.gdeltproject.org/api/v2/doc/doc?query=&mode=ArtList&format=json&maxrecords=8&sort=DateDesc&sourcelang=english",
+      { timeoutMs: 10000 }
+    );
+    if (newsResponse.ok) {
+      const data = await newsResponse.json();
+      const articles = data?.articles?.slice(0, 6) || [];
+
+      for (const article of articles) {
+        const publishDate = article.seendate
+          ? new Date(
+              article.seendate.replace(
+                /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/,
+                "$1-$2-$3T$4:$5:$6Z"
+              )
+            ).getTime()
+          : Date.now();
+
+        activities.push({
+          id: `news-${article.url || Math.random()}`,
+          type: "news",
+          title: (article.title || "Breaking News").slice(0, 80),
+          location: article.sourcecountry || article.domain || "World",
+          time: getRelativeTime(publishDate),
+          timestamp: publishDate,
+          severity: "low",
+          link: article.url,
+        });
+      }
+    }
+  } catch (error) {
+    logger.error("Failed to fetch news:", error);
   }
 
   // Sort by timestamp (most recent first)

@@ -8,6 +8,7 @@ import {
   Waves,
   Cloud,
   RefreshCw,
+  Newspaper,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLiveActivity, ActivityItem } from "@/hooks/useLiveActivity";
@@ -18,6 +19,7 @@ const iconMap = {
   volcano: Flame,
   weather: AlertTriangle,
   tsunami: Waves,
+  news: Newspaper,
 };
 
 const colorMap = {
@@ -25,6 +27,7 @@ const colorMap = {
   volcano: "bg-red-500/10 text-red-500",
   weather: "bg-sky-500/10 text-sky-500",
   tsunami: "bg-blue-500/10 text-blue-500",
+  news: "bg-purple-500/10 text-purple-500",
 };
 
 const linkMap = {
@@ -32,6 +35,7 @@ const linkMap = {
   volcano: "/volcanoes",
   weather: "/weather",
   tsunami: "/tsunami",
+  news: "/search",
 };
 
 const severityStyles = {
@@ -46,7 +50,7 @@ interface ActivityFeedProps {
   maxItems?: number;
 }
 
-export function ActivityFeed({ className, maxItems = 6 }: ActivityFeedProps) {
+export function ActivityFeed({ className, maxItems = 10 }: ActivityFeedProps) {
   const { data: activities, isLoading, error } = useLiveActivity();
 
   const items = activities?.slice(0, maxItems) || [];
@@ -119,17 +123,11 @@ export function ActivityFeed({ className, maxItems = 6 }: ActivityFeedProps) {
       <Card className="divide-y divide-border overflow-hidden">
         {items.map((item) => {
           const Icon = iconMap[item.type] || Cloud;
-          const linkTo = linkMap[item.type] || "/";
-          
-          return (
-            <Link
-              key={item.id}
-              to={linkTo}
-              className={cn(
-                "flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors cursor-pointer",
-                severityStyles[item.severity]
-              )}
-            >
+          const isExternal = item.type === "news" && item.link;
+          const linkTo = isExternal ? item.link! : (linkMap[item.type] || "/");
+
+          const inner = (
+            <>
               <div
                 className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-full shrink-0",
@@ -157,6 +155,31 @@ export function ActivityFeed({ className, maxItems = 6 }: ActivityFeedProps) {
                   </span>
                 )}
               </div>
+            </>
+          );
+
+          const itemClassName = cn(
+            "flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors cursor-pointer",
+            severityStyles[item.severity]
+          );
+
+          return isExternal ? (
+            <a
+              key={item.id}
+              href={linkTo}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={itemClassName}
+            >
+              {inner}
+            </a>
+          ) : (
+            <Link
+              key={item.id}
+              to={linkTo}
+              className={itemClassName}
+            >
+              {inner}
             </Link>
           );
         })}

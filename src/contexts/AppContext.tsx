@@ -18,6 +18,7 @@ interface FavoriteItem {
 interface UserPreferences {
   defaultMapView: "satellite" | "terrain" | "standard";
   units: "metric" | "imperial";
+  language: string;
   notifications: {
     earthquakes: boolean;
     volcanoes: boolean;
@@ -26,6 +27,12 @@ interface UserPreferences {
   };
   autoRefresh: boolean;
   refreshInterval: number; // in seconds
+  pushNotifications: boolean;
+  emailNotifications: boolean;
+  soundEnabled: boolean;
+  vibrationEnabled: boolean;
+  locationAccess: boolean;
+  offlineMode: boolean;
 }
 
 interface AppState {
@@ -48,6 +55,7 @@ interface AppContextType extends AppState {
 const defaultPreferences: UserPreferences = {
   defaultMapView: "standard",
   units: "metric",
+  language: "en",
   notifications: {
     earthquakes: true,
     volcanoes: true,
@@ -56,6 +64,12 @@ const defaultPreferences: UserPreferences = {
   },
   autoRefresh: true,
   refreshInterval: 30,
+  pushNotifications: true,
+  emailNotifications: false,
+  soundEnabled: true,
+  vibrationEnabled: true,
+  locationAccess: true,
+  offlineMode: false,
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);

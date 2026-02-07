@@ -154,4 +154,24 @@
   .safe-right {
     padding-right: env(safe-area-inset-right);
   }
+
+  /* TV-friendly focus styles for D-pad / remote navigation */
+  .tv-focus:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary ring-2 ring-primary/30;
+  }
+}
+
+/* TV / large screen optimizations */
+@media (min-width: 1920px) {
+  html {
+    font-size: 20px;
+  }
+}
+
+@media (min-width: 1280px) and (pointer: coarse) {
+  /* TV devices typically have coarse pointer */
+  button, a, [role="button"], .tv-focus {
+    min-height: 48px;
+    min-width: 48px;
+  }
 }

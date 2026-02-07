@@ -20,6 +20,7 @@ const Earthquakes = lazy(() => import("./pages/Earthquakes"));
 const Volcanoes = lazy(() => import("./pages/Volcanoes"));
 const ISS = lazy(() => import("./pages/ISS"));
 const Tsunami = lazy(() => import("./pages/Tsunami"));
+const Chill = lazy(() => import("./pages/Chill"));
 const Weather = lazy(() => import("./pages/Weather"));
 const RadioPage = lazy(() => import("./pages/Radio"));
 const SearchPage = lazy(() => import("./pages/Search"));
@@ -85,6 +86,7 @@ const App = () => {
                       <Route path="/volcanoes" element={<AuthGuard><Volcanoes /></AuthGuard>} />
                       <Route path="/iss" element={<AuthGuard><ISS /></AuthGuard>} />
                       <Route path="/tsunami" element={<AuthGuard><Tsunami /></AuthGuard>} />
+                      <Route path="/chill" element={<AuthGuard><Chill /></AuthGuard>} />
                       <Route path="/weather" element={<AuthGuard><Weather /></AuthGuard>} />
                       <Route path="/radio" element={<AuthGuard><RadioPage /></AuthGuard>} />
                       <Route path="/search" element={<AuthGuard><SearchPage /></AuthGuard>} />

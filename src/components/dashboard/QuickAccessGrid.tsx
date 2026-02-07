@@ -7,6 +7,7 @@ import {
   Flame,
   Cloud,
   Radio,
+  Film,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -60,6 +61,13 @@ const quickAccessItems: QuickAccessItem[] = [
     icon: Radio,
     path: "/radio",
     gradient: "from-purple-500 to-violet-600",
+  },
+  {
+    label: "Chill",
+    description: "Movies & Anime streaming",
+    icon: Film,
+    path: "/chill",
+    gradient: "from-pink-500 to-purple-600",
   },
 ];
 

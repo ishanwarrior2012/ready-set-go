@@ -1,7 +1,19 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "light" | "dark" | "system";
-type ColorTheme = "default" | "ocean" | "forest" | "sunset" | "midnight" | "rose";
+type ColorTheme =
+  | "default"
+  | "ocean"
+  | "forest"
+  | "sunset"
+  | "midnight"
+  | "rose"
+  | "amber"
+  | "emerald"
+  | "crimson"
+  | "arctic"
+  | "lavender"
+  | "coral";
 
 interface ThemeContextType {
   theme: Theme;
@@ -67,6 +79,60 @@ const colorThemeVars: Record<ColorTheme, Record<string, string>> = {
     "--sidebar-ring": "340 80% 55%",
     "--nav-active": "340 80% 55%",
     "--info": "340 80% 55%",
+  },
+  amber: {
+    "--primary": "38 92% 50%",
+    "--accent": "38 92% 50%",
+    "--ring": "38 92% 50%",
+    "--sidebar-primary": "38 92% 50%",
+    "--sidebar-ring": "38 92% 50%",
+    "--nav-active": "38 92% 50%",
+    "--info": "38 92% 50%",
+  },
+  emerald: {
+    "--primary": "160 84% 39%",
+    "--accent": "160 84% 39%",
+    "--ring": "160 84% 39%",
+    "--sidebar-primary": "160 84% 39%",
+    "--sidebar-ring": "160 84% 39%",
+    "--nav-active": "160 84% 39%",
+    "--info": "160 84% 39%",
+  },
+  crimson: {
+    "--primary": "0 84% 50%",
+    "--accent": "0 84% 50%",
+    "--ring": "0 84% 50%",
+    "--sidebar-primary": "0 84% 50%",
+    "--sidebar-ring": "0 84% 50%",
+    "--nav-active": "0 84% 50%",
+    "--info": "0 84% 50%",
+  },
+  arctic: {
+    "--primary": "195 80% 60%",
+    "--accent": "195 80% 60%",
+    "--ring": "195 80% 60%",
+    "--sidebar-primary": "195 80% 60%",
+    "--sidebar-ring": "195 80% 60%",
+    "--nav-active": "195 80% 60%",
+    "--info": "195 80% 60%",
+  },
+  lavender: {
+    "--primary": "270 60% 65%",
+    "--accent": "270 60% 65%",
+    "--ring": "270 60% 65%",
+    "--sidebar-primary": "270 60% 65%",
+    "--sidebar-ring": "270 60% 65%",
+    "--nav-active": "270 60% 65%",
+    "--info": "270 60% 65%",
+  },
+  coral: {
+    "--primary": "16 85% 60%",
+    "--accent": "16 85% 60%",
+    "--ring": "16 85% 60%",
+    "--sidebar-primary": "16 85% 60%",
+    "--sidebar-ring": "16 85% 60%",
+    "--nav-active": "16 85% 60%",
+    "--info": "16 85% 60%",
   },
 };
 

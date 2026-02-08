@@ -22,6 +22,7 @@ import {
   MessageSquare,
   Smartphone,
   Volume2,
+  Check,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { usePreferences } from "@/contexts/AppContext";
@@ -43,17 +44,30 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+
+type ThemeMode = "light" | "dark" | "system";
+type ColorTheme = "default" | "ocean" | "forest" | "sunset" | "midnight" | "rose";
+
+const themeOptions: { value: ThemeMode; icon: typeof Sun; label: string }[] = [
+  { value: "light", icon: Sun, label: "Light" },
+  { value: "dark", icon: Moon, label: "Dark" },
+  { value: "system", icon: Monitor, label: "System" },
+];
+
+const colorThemes: { value: ColorTheme; label: string; preview: string; desc: string }[] = [
+  { value: "default", label: "Electric Blue", preview: "bg-[hsl(199,89%,48%)]", desc: "Default SafeTrack theme" },
+  { value: "ocean", label: "Ocean", preview: "bg-[hsl(210,100%,45%)]", desc: "Deep blue ocean vibes" },
+  { value: "forest", label: "Forest", preview: "bg-[hsl(150,60%,40%)]", desc: "Natural green tones" },
+  { value: "sunset", label: "Sunset", preview: "bg-[hsl(25,95%,55%)]", desc: "Warm orange glow" },
+  { value: "midnight", label: "Midnight", preview: "bg-[hsl(260,60%,50%)]", desc: "Purple night sky" },
+  { value: "rose", label: "Rose", preview: "bg-[hsl(340,80%,55%)]", desc: "Elegant pink accent" },
+];
 
 export default function Settings() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, colorTheme, setColorTheme } = useTheme();
   const { preferences, updatePreferences } = usePreferences();
   const { toast } = useToast();
-
-  const themeOptions = [
-    { value: "light" as const, icon: Sun, label: "Light" },
-    { value: "dark" as const, icon: Moon, label: "Dark" },
-    { value: "system" as const, icon: Monitor, label: "System" },
-  ];
 
   const handleLocationToggle = async (enabled: boolean) => {
     if (enabled) {
@@ -102,13 +116,13 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Theme Selector */}
+        {/* Mode Selector (Light/Dark/System) */}
         <Card className="p-4">
           <div className="flex items-center gap-3 mb-4">
             <Palette className="h-5 w-5 text-muted-foreground" />
             <div>
-              <p className="font-medium">Appearance</p>
-              <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
+              <p className="font-medium">Appearance Mode</p>
+              <p className="text-sm text-muted-foreground">Light, dark, or system default</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -122,6 +136,42 @@ export default function Settings() {
                 <option.icon className="h-4 w-4 mr-2" />
                 {option.label}
               </Button>
+            ))}
+          </div>
+        </Card>
+
+        {/* Color Theme Selector */}
+        <Card className="p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <Palette className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <p className="font-medium">Color Theme</p>
+              <p className="text-sm text-muted-foreground">Choose your accent color palette</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {colorThemes.map((ct) => (
+              <button
+                key={ct.value}
+                onClick={() => {
+                  setColorTheme(ct.value);
+                  toast({ title: `Theme: ${ct.label}` });
+                }}
+                className={cn(
+                  "flex items-center gap-3 p-3 rounded-lg border-2 transition-all tv-focus text-left",
+                  colorTheme === ct.value
+                    ? "border-primary bg-primary/5"
+                    : "border-transparent bg-muted/50 hover:bg-muted"
+                )}
+              >
+                <div className={cn("h-8 w-8 rounded-full shrink-0 flex items-center justify-center", ct.preview)}>
+                  {colorTheme === ct.value && <Check className="h-4 w-4 text-white" />}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{ct.label}</p>
+                  <p className="text-xs text-muted-foreground truncate">{ct.desc}</p>
+                </div>
+              </button>
             ))}
           </div>
         </Card>
@@ -190,11 +240,7 @@ export default function Settings() {
                 <p className="font-medium">Push Notifications</p>
                 <p className="text-sm text-muted-foreground">Receive alerts on your device</p>
               </div>
-              <Switch
-                checked={preferences.pushNotifications ?? true}
-                onCheckedChange={handlePushNotifications}
-                className="tv-focus"
-              />
+              <Switch checked={preferences.pushNotifications ?? true} onCheckedChange={handlePushNotifications} className="tv-focus" />
             </div>
             <div className="flex items-center gap-3 p-4">
               <Mail className="h-5 w-5 text-muted-foreground" />
@@ -202,14 +248,7 @@ export default function Settings() {
                 <p className="font-medium">Email Notifications</p>
                 <p className="text-sm text-muted-foreground">Receive email updates</p>
               </div>
-              <Switch
-                checked={preferences.emailNotifications ?? false}
-                onCheckedChange={(val) => {
-                  updatePreferences({ emailNotifications: val });
-                  toast({ title: val ? "Email Notifications On" : "Email Notifications Off" });
-                }}
-                className="tv-focus"
-              />
+              <Switch checked={preferences.emailNotifications ?? false} onCheckedChange={(val) => { updatePreferences({ emailNotifications: val }); toast({ title: val ? "Email Notifications On" : "Email Notifications Off" }); }} className="tv-focus" />
             </div>
             <div className="flex items-center gap-3 p-4">
               <Volume2 className="h-5 w-5 text-muted-foreground" />
@@ -217,14 +256,7 @@ export default function Settings() {
                 <p className="font-medium">Sound</p>
                 <p className="text-sm text-muted-foreground">Play sound for alerts</p>
               </div>
-              <Switch
-                checked={preferences.soundEnabled ?? true}
-                onCheckedChange={(val) => {
-                  updatePreferences({ soundEnabled: val });
-                  toast({ title: val ? "Sound On" : "Sound Off" });
-                }}
-                className="tv-focus"
-              />
+              <Switch checked={preferences.soundEnabled ?? true} onCheckedChange={(val) => { updatePreferences({ soundEnabled: val }); toast({ title: val ? "Sound On" : "Sound Off" }); }} className="tv-focus" />
             </div>
             <div className="flex items-center gap-3 p-4">
               <Smartphone className="h-5 w-5 text-muted-foreground" />
@@ -232,14 +264,7 @@ export default function Settings() {
                 <p className="font-medium">Vibration</p>
                 <p className="text-sm text-muted-foreground">Vibrate for alerts</p>
               </div>
-              <Switch
-                checked={preferences.vibrationEnabled ?? true}
-                onCheckedChange={(val) => {
-                  updatePreferences({ vibrationEnabled: val });
-                  toast({ title: val ? "Vibration On" : "Vibration Off" });
-                }}
-                className="tv-focus"
-              />
+              <Switch checked={preferences.vibrationEnabled ?? true} onCheckedChange={(val) => { updatePreferences({ vibrationEnabled: val }); toast({ title: val ? "Vibration On" : "Vibration Off" }); }} className="tv-focus" />
             </div>
           </Card>
         </div>
@@ -254,11 +279,7 @@ export default function Settings() {
                 <p className="font-medium">Location Access</p>
                 <p className="text-sm text-muted-foreground">Allow location for local data</p>
               </div>
-              <Switch
-                checked={preferences.locationAccess ?? true}
-                onCheckedChange={handleLocationToggle}
-                className="tv-focus"
-              />
+              <Switch checked={preferences.locationAccess ?? true} onCheckedChange={handleLocationToggle} className="tv-focus" />
             </div>
             <div className="flex items-center gap-3 p-4">
               <Download className="h-5 w-5 text-muted-foreground" />
@@ -266,14 +287,7 @@ export default function Settings() {
                 <p className="font-medium">Offline Mode</p>
                 <p className="text-sm text-muted-foreground">Download data for offline use</p>
               </div>
-              <Switch
-                checked={preferences.offlineMode ?? false}
-                onCheckedChange={(val) => {
-                  updatePreferences({ offlineMode: val });
-                  toast({ title: val ? "Offline Mode Enabled" : "Offline Mode Disabled" });
-                }}
-                className="tv-focus"
-              />
+              <Switch checked={preferences.offlineMode ?? false} onCheckedChange={(val) => { updatePreferences({ offlineMode: val }); toast({ title: val ? "Offline Mode Enabled" : "Offline Mode Disabled" }); }} className="tv-focus" />
             </div>
             <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors">
               <Shield className="h-5 w-5 text-muted-foreground" />

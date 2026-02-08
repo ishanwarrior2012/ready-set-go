@@ -7,14 +7,10 @@ import {
   Bell,
   Globe,
   Ruler,
-  Palette,
   Shield,
   HelpCircle,
   Info,
   ChevronRight,
-  Moon,
-  Sun,
-  Monitor,
   MapPin,
   Download,
   Trash2,
@@ -22,9 +18,7 @@ import {
   MessageSquare,
   Smartphone,
   Volume2,
-  Check,
 } from "lucide-react";
-import { useTheme } from "@/contexts/ThemeContext";
 import { usePreferences } from "@/contexts/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -44,28 +38,9 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-
-type ThemeMode = "light" | "dark" | "system";
-type ColorTheme = "default" | "ocean" | "forest" | "sunset" | "midnight" | "rose";
-
-const themeOptions: { value: ThemeMode; icon: typeof Sun; label: string }[] = [
-  { value: "light", icon: Sun, label: "Light" },
-  { value: "dark", icon: Moon, label: "Dark" },
-  { value: "system", icon: Monitor, label: "System" },
-];
-
-const colorThemes: { value: ColorTheme; label: string; preview: string; desc: string }[] = [
-  { value: "default", label: "Electric Blue", preview: "bg-[hsl(199,89%,48%)]", desc: "Default SafeTrack theme" },
-  { value: "ocean", label: "Ocean", preview: "bg-[hsl(210,100%,45%)]", desc: "Deep blue ocean vibes" },
-  { value: "forest", label: "Forest", preview: "bg-[hsl(150,60%,40%)]", desc: "Natural green tones" },
-  { value: "sunset", label: "Sunset", preview: "bg-[hsl(25,95%,55%)]", desc: "Warm orange glow" },
-  { value: "midnight", label: "Midnight", preview: "bg-[hsl(260,60%,50%)]", desc: "Purple night sky" },
-  { value: "rose", label: "Rose", preview: "bg-[hsl(340,80%,55%)]", desc: "Elegant pink accent" },
-];
+import { ThemeSelector } from "@/components/settings/ThemeSelector";
 
 export default function Settings() {
-  const { theme, setTheme, colorTheme, setColorTheme } = useTheme();
   const { preferences, updatePreferences } = usePreferences();
   const { toast } = useToast();
 
@@ -116,65 +91,8 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Mode Selector (Light/Dark/System) */}
-        <Card className="p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <Palette className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <p className="font-medium">Appearance Mode</p>
-              <p className="text-sm text-muted-foreground">Light, dark, or system default</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            {themeOptions.map((option) => (
-              <Button
-                key={option.value}
-                variant={theme === option.value ? "default" : "outline"}
-                className="flex-1 tv-focus"
-                onClick={() => setTheme(option.value)}
-              >
-                <option.icon className="h-4 w-4 mr-2" />
-                {option.label}
-              </Button>
-            ))}
-          </div>
-        </Card>
-
-        {/* Color Theme Selector */}
-        <Card className="p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <Palette className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <p className="font-medium">Color Theme</p>
-              <p className="text-sm text-muted-foreground">Choose your accent color palette</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {colorThemes.map((ct) => (
-              <button
-                key={ct.value}
-                onClick={() => {
-                  setColorTheme(ct.value);
-                  toast({ title: `Theme: ${ct.label}` });
-                }}
-                className={cn(
-                  "flex items-center gap-3 p-3 rounded-lg border-2 transition-all tv-focus text-left",
-                  colorTheme === ct.value
-                    ? "border-primary bg-primary/5"
-                    : "border-transparent bg-muted/50 hover:bg-muted"
-                )}
-              >
-                <div className={cn("h-8 w-8 rounded-full shrink-0 flex items-center justify-center", ct.preview)}>
-                  {colorTheme === ct.value && <Check className="h-4 w-4 text-white" />}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{ct.label}</p>
-                  <p className="text-xs text-muted-foreground truncate">{ct.desc}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </Card>
+        {/* Theme Selectors (extracted component) */}
+        <ThemeSelector />
 
         {/* Language & Units */}
         <div>

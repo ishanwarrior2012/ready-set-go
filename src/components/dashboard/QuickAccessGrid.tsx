@@ -8,6 +8,7 @@ import {
   Cloud,
   Radio,
   Film,
+  Orbit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -61,6 +62,13 @@ const quickAccessItems: QuickAccessItem[] = [
     icon: Radio,
     path: "/radio",
     gradient: "from-purple-500 to-violet-600",
+  },
+  {
+    label: "ISS Tracker",
+    description: "Track the space station",
+    icon: Orbit,
+    path: "/iss",
+    gradient: "from-indigo-500 to-blue-600",
   },
   {
     label: "Chill",

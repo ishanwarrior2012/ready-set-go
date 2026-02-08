@@ -131,7 +131,7 @@ async function fetchLiveActivity(): Promise<ActivityItem[]> {
   // Fetch latest world news from GDELT
   try {
     const newsResponse = await fetchWithTimeout(
-      "https://api.gdeltproject.org/api/v2/doc/doc?query=&mode=ArtList&format=json&maxrecords=8&sort=DateDesc&sourcelang=english",
+      "https://api.gdeltproject.org/api/v2/doc/doc?query=world OR breaking OR crisis OR disaster&mode=ArtList&format=json&maxrecords=8&sort=DateDesc&sourcelang=english",
       { timeoutMs: 10000 }
     );
     if (newsResponse.ok) {

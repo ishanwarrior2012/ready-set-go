@@ -175,3 +175,47 @@
     min-width: 48px;
   }
 }
+
+/* AppMySite / WebView / Smart TV compatibility */
+@media screen and (min-width: 960px) {
+  /* Ensure full-width rendering in WebView wrappers */
+  html, body, #root {
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+}
+
+/* Force hardware acceleration for smoother scrolling on TV/WebView */
+#root {
+  -webkit-overflow-scrolling: touch;
+  transform: translateZ(0);
+}
+
+/* Focus-visible for TV remote / D-pad navigation */
+*:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Make all interactive elements focusable for TV remotes */
+@media (pointer: coarse) and (min-width: 960px) {
+  button, a, [role="button"], input, select, textarea, .tv-focus {
+    min-height: 52px;
+    min-width: 52px;
+  }
+
+  /* Larger text for TV screens at distance */
+  body {
+    font-size: 18px;
+  }
+
+  /* Make cards more tap/click friendly */
+  .tv-focus:focus-visible,
+  button:focus-visible,
+  a:focus-visible {
+    outline: 3px solid hsl(var(--primary));
+    outline-offset: 4px;
+    box-shadow: 0 0 0 6px hsl(var(--primary) / 0.2);
+  }
+}

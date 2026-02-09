@@ -5,11 +5,8 @@ import { Button } from "@/components/ui/button";
 import {
   Settings as SettingsIcon,
   Bell,
-  Globe,
   Ruler,
   Shield,
-  HelpCircle,
-  Info,
   ChevronRight,
   MapPin,
   Download,
@@ -18,6 +15,10 @@ import {
   MessageSquare,
   Smartphone,
   Volume2,
+  RefreshCw,
+  Map,
+  Wifi,
+  Heart,
 } from "lucide-react";
 import { usePreferences } from "@/contexts/AppContext";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +40,10 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { ThemeSelector } from "@/components/settings/ThemeSelector";
+import { LanguageSelector } from "@/components/settings/LanguageSelector";
+import { HelpFAQ } from "@/components/settings/HelpFAQ";
+import { AboutDialog } from "@/components/settings/AboutDialog";
+import { Slider } from "@/components/ui/slider";
 
 export default function Settings() {
   const { preferences, updatePreferences } = usePreferences();
@@ -91,38 +96,14 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Theme Selectors (extracted component) */}
+        {/* Theme Selectors */}
         <ThemeSelector />
 
         {/* Language & Units */}
         <div>
           <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Regional</h2>
           <Card className="divide-y">
-            <div className="flex items-center gap-3 p-4">
-              <Globe className="h-5 w-5 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="font-medium">Language</p>
-                <p className="text-sm text-muted-foreground">Display language</p>
-              </div>
-              <Select
-                value={preferences.language || "en"}
-                onValueChange={(val) => {
-                  updatePreferences({ language: val });
-                  toast({ title: "Language Updated" });
-                }}
-              >
-                <SelectTrigger className="w-32 tv-focus">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="es">Español</SelectItem>
-                  <SelectItem value="fr">Français</SelectItem>
-                  <SelectItem value="de">Deutsch</SelectItem>
-                  <SelectItem value="ja">日本語</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <LanguageSelector />
             <div className="flex items-center gap-3 p-4">
               <Ruler className="h-5 w-5 text-muted-foreground" />
               <div className="flex-1">
@@ -145,6 +126,69 @@ export default function Settings() {
                 </SelectContent>
               </Select>
             </div>
+          </Card>
+        </div>
+
+        {/* Map Settings */}
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Map</h2>
+          <Card className="divide-y">
+            <div className="flex items-center gap-3 p-4">
+              <Map className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Default Map View</p>
+                <p className="text-sm text-muted-foreground">Map layer style</p>
+              </div>
+              <Select
+                value={preferences.defaultMapView}
+                onValueChange={(val: "satellite" | "terrain" | "standard") => {
+                  updatePreferences({ defaultMapView: val });
+                  toast({ title: `Map: ${val}` });
+                }}
+              >
+                <SelectTrigger className="w-32 tv-focus">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard</SelectItem>
+                  <SelectItem value="satellite">Satellite</SelectItem>
+                  <SelectItem value="terrain">Terrain</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </Card>
+        </div>
+
+        {/* Auto Refresh */}
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Data Refresh</h2>
+          <Card className="divide-y">
+            <div className="flex items-center gap-3 p-4">
+              <RefreshCw className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Auto Refresh</p>
+                <p className="text-sm text-muted-foreground">Automatically update live data</p>
+              </div>
+              <Switch checked={preferences.autoRefresh ?? true} onCheckedChange={(val) => { updatePreferences({ autoRefresh: val }); toast({ title: val ? "Auto Refresh On" : "Auto Refresh Off" }); }} className="tv-focus" />
+            </div>
+            {preferences.autoRefresh && (
+              <div className="flex items-center gap-3 p-4">
+                <Wifi className="h-5 w-5 text-muted-foreground" />
+                <div className="flex-1">
+                  <p className="font-medium">Refresh Interval</p>
+                  <p className="text-sm text-muted-foreground">{preferences.refreshInterval}s</p>
+                </div>
+                <div className="w-32">
+                  <Slider
+                    value={[preferences.refreshInterval]}
+                    min={10}
+                    max={120}
+                    step={5}
+                    onValueChange={([val]) => updatePreferences({ refreshInterval: val })}
+                  />
+                </div>
+              </div>
+            )}
           </Card>
         </div>
 
@@ -187,6 +231,37 @@ export default function Settings() {
           </Card>
         </div>
 
+        {/* Notification Categories */}
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Alert Categories</h2>
+          <Card className="divide-y">
+            {[
+              { key: "earthquakes" as const, label: "Earthquake Alerts", desc: "Seismic activity notifications" },
+              { key: "volcanoes" as const, label: "Volcano Alerts", desc: "Volcanic activity updates" },
+              { key: "weather" as const, label: "Weather Alerts", desc: "Severe weather warnings" },
+              { key: "flights" as const, label: "Flight Alerts", desc: "Flight status updates" },
+            ].map((item) => (
+              <div key={item.key} className="flex items-center gap-3 p-4">
+                <Bell className="h-5 w-5 text-muted-foreground" />
+                <div className="flex-1">
+                  <p className="font-medium">{item.label}</p>
+                  <p className="text-sm text-muted-foreground">{item.desc}</p>
+                </div>
+                <Switch
+                  checked={preferences.notifications?.[item.key] ?? true}
+                  onCheckedChange={(val) => {
+                    updatePreferences({
+                      notifications: { ...preferences.notifications, [item.key]: val },
+                    });
+                    toast({ title: `${item.label}: ${val ? "On" : "Off"}` });
+                  }}
+                  className="tv-focus"
+                />
+              </div>
+            ))}
+          </Card>
+        </div>
+
         {/* Data & Privacy */}
         <div>
           <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Data & Privacy</h2>
@@ -222,14 +297,7 @@ export default function Settings() {
         <div>
           <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Support</h2>
           <Card className="divide-y">
-            <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-              <HelpCircle className="h-5 w-5 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="font-medium">Help & FAQ</p>
-                <p className="text-sm text-muted-foreground">Get help and answers</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </div>
+            <HelpFAQ />
             <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors">
               <MessageSquare className="h-5 w-5 text-muted-foreground" />
               <div className="flex-1">
@@ -238,14 +306,16 @@ export default function Settings() {
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>
-            <div className="flex items-center gap-3 p-4">
-              <Info className="h-5 w-5 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="font-medium">About</p>
-                <p className="text-sm text-muted-foreground">SafeTrack PWA v1.0.0</p>
-              </div>
-            </div>
+            <AboutDialog />
           </Card>
+        </div>
+
+        {/* Created By Footer */}
+        <div className="text-center py-4 space-y-2">
+          <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
+            Made with <Heart className="h-3 w-3 text-destructive fill-destructive" /> by <span className="font-semibold text-foreground">Shrot Singh</span>
+          </div>
+          <p className="text-xs text-muted-foreground">SafeTrack PWA v1.0.0 • © {new Date().getFullYear()}</p>
         </div>
 
         {/* Danger Zone */}

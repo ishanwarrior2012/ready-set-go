@@ -30,6 +30,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const AuthPage = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Admin = lazy(() => import("./pages/Admin"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -94,6 +95,7 @@ const App = () => {
                       <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
                       <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
                       <Route path="/notifications" element={<AuthGuard><Notifications /></AuthGuard>} />
+                      <Route path="/admin" element={<AuthGuard><Admin /></AuthGuard>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>

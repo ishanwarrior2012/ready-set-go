@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Film, Tv, ExternalLink, Shield, X, Smartphone, Monitor, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import chillLogo from "@/assets/chill-logo.png";
 
 type ChillTab = "movies" | "anime";
 
@@ -156,6 +157,7 @@ export default function Chill() {
       <div className="flex flex-col h-[calc(100vh-8rem)] animate-fade-in">
         {/* Tab Header */}
         <div className="flex items-center gap-2 p-3 border-b bg-card">
+          <img src={chillLogo} alt="Chill" className="h-8 w-8 rounded-lg" />
           <div className="flex gap-1.5 flex-1">
             {tabs.map((tab) => (
               <Button

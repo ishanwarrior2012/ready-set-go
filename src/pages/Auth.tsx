@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { useAuth } from "@/hooks/useAuth";
 import { GuestGuard } from "@/components/auth/AuthGuard";
 import { Button } from "@/components/ui/button";
@@ -495,6 +496,7 @@ function AuthPageContent() {
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
                   />
+                  <PasswordStrengthMeter password={password} />
                   {errors.password && (
                     <p className="text-sm text-destructive">{errors.password}</p>
                   )}

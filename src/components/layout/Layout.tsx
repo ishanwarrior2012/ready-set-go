@@ -3,6 +3,7 @@ import { Header } from "./Header";
 import { BottomNavigation } from "./BottomNavigation";
 import { Sidebar } from "./Sidebar";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
+import { usePreferences } from "@/contexts/AppContext";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,9 +12,10 @@ interface LayoutProps {
 
 export function Layout({ children, showFab = true }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { preferences } = usePreferences();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-background" dir={preferences.rtl ? "rtl" : "ltr"}>
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <Header onMenuClick={() => setSidebarOpen(true)} />
       

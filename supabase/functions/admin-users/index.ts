@@ -68,9 +68,20 @@ serve(async (req: Request) => {
         .from("user_roles")
         .select("*");
 
-      // Map roles to profiles
+      // Get auth user emails using admin API
+      const { data: authData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+      const authUsers = authData?.users || [];
+
+      // Build email map from auth users
+      const emailMap: Record<string, string> = {};
+      for (const au of authUsers) {
+        emailMap[au.id] = au.email || "";
+      }
+
+      // Map roles and auth emails to profiles
       const usersWithRoles = (profiles || []).map((p: any) => ({
         ...p,
+        auth_email: emailMap[p.id] || p.email || "",
         roles: (roles || [])
           .filter((r: any) => r.user_id === p.id)
           .map((r: any) => r.role),

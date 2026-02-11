@@ -19,6 +19,9 @@ interface UserPreferences {
   defaultMapView: "satellite" | "terrain" | "standard";
   units: "metric" | "imperial";
   language: string;
+  rtl: boolean;
+  currency: string;
+  dateFormat: "short" | "long" | "datetime";
   notifications: {
     earthquakes: boolean;
     volcanoes: boolean;
@@ -56,6 +59,9 @@ const defaultPreferences: UserPreferences = {
   defaultMapView: "standard",
   units: "metric",
   language: "en",
+  rtl: false,
+  currency: "USD",
+  dateFormat: "short",
   notifications: {
     earthquakes: true,
     volcanoes: true,

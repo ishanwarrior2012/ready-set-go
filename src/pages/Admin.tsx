@@ -107,7 +107,6 @@ export default function Admin() {
     const q = searchQuery.toLowerCase();
     return (
       (u.display_name || "").toLowerCase().includes(q) ||
-      (u.email || "").toLowerCase().includes(q) ||
       (u.auth_email || "").toLowerCase().includes(q) ||
       u.roles.some(r => r.toLowerCase().includes(q))
     );
@@ -212,13 +211,7 @@ export default function Admin() {
                           {u.auth_email || "No auth email"}
                         </p>
                       </div>
-                      {/* Profile email */}
-                      {u.email && u.email !== u.auth_email && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <Mail className="h-3 w-3 text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground truncate">{u.email}</p>
-                        </div>
-                      )}
+                      {/* auth_email is the only email source now */}
                       <div className="flex items-center gap-1 mt-0.5">
                         <Calendar className="h-3 w-3 text-muted-foreground" />
                         <p className="text-xs text-muted-foreground">

@@ -3,15 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { logger } from "@/lib/logger";
 
-export type AppRole = "admin" | "moderator" | "user";
+export type AppRole = "owner" | "admin" | "moderator" | "developer" | "media" | "staff" | "pro_member" | "member" | "user";
 
 interface UseAuthorizationReturn {
   roles: AppRole[];
+  isOwner: boolean;
   isAdmin: boolean;
   isModerator: boolean;
+  isDeveloper: boolean;
+  isStaff: boolean;
+  isProMember: boolean;
   isUser: boolean;
   loading: boolean;
   hasRole: (role: AppRole) => boolean;
+  hasAnyRole: (roles: AppRole[]) => boolean;
   refreshRoles: () => Promise<void>;
 }
 
@@ -56,13 +61,23 @@ export function useAuthorization(): UseAuthorizationReturn {
     [roles]
   );
 
+  const hasAnyRole = useCallback(
+    (checkRoles: AppRole[]) => checkRoles.some((r) => roles.includes(r)),
+    [roles]
+  );
+
   return {
     roles,
-    isAdmin: roles.includes("admin"),
+    isOwner: roles.includes("owner"),
+    isAdmin: roles.includes("admin") || roles.includes("owner"),
     isModerator: roles.includes("moderator"),
+    isDeveloper: roles.includes("developer"),
+    isStaff: roles.includes("staff"),
+    isProMember: roles.includes("pro_member"),
     isUser: roles.includes("user"),
     loading,
     hasRole,
+    hasAnyRole,
     refreshRoles: fetchRoles,
   };
 }

@@ -51,7 +51,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             aria-label="Search"
           >
             <Link to="/search">
-              <Search className="h-5 w-5" />
+              <Search className="h-5 w-5 text-foreground" />
             </Link>
           </Button>
           <Button

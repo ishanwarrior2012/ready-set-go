@@ -61,7 +61,7 @@ export default function Profile() {
     if (data) {
       const p = {
         display_name: data.display_name || user.email?.split("@")[0] || "",
-        email: data.email || user.email || "",
+        email: user.email || "",
         bio: data.bio || "",
         avatar_url: data.avatar_url || "",
       };

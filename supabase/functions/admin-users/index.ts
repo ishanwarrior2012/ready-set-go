@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req: Request) => {
@@ -17,7 +17,7 @@ serve(async (req: Request) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Verify the caller is an admin
+    // Verify the caller is authenticated
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -39,13 +39,16 @@ serve(async (req: Request) => {
       });
     }
 
-    // Check admin role
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: caller.id,
-      _role: "admin",
-    });
+    // Check admin or owner role
+    const { data: callerRoles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", caller.id);
 
-    if (!isAdmin) {
+    const callerRoleList = (callerRoles || []).map((r: any) => r.role);
+    const isAdminOrOwner = callerRoleList.includes("admin") || callerRoleList.includes("owner");
+
+    if (!isAdminOrOwner) {
       return new Response(JSON.stringify({ error: "Forbidden: Admin role required" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -64,21 +67,17 @@ serve(async (req: Request) => {
       if (error) throw error;
 
       // Get all roles
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("*");
+      const { data: roles } = await supabase.from("user_roles").select("*");
 
-      // Get auth user emails using admin API
+      // Get auth user emails
       const { data: authData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
       const authUsers = authData?.users || [];
 
-      // Build email map from auth users
       const emailMap: Record<string, string> = {};
       for (const au of authUsers) {
         emailMap[au.id] = au.email || "";
       }
 
-      // Map roles and auth emails to profiles
       const usersWithRoles = (profiles || []).map((p: any) => ({
         ...p,
         auth_email: emailMap[p.id] || p.email || "",
@@ -97,6 +96,15 @@ serve(async (req: Request) => {
 
       if (!user_id || !role) {
         return new Response(JSON.stringify({ error: "user_id and role required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Validate role is a valid enum value
+      const validRoles = ["owner", "admin", "moderator", "developer", "media", "staff", "pro_member", "member", "user"];
+      if (!validRoles.includes(role)) {
+        return new Response(JSON.stringify({ error: "Invalid role" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });

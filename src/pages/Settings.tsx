@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import {
   Settings as SettingsIcon, Bell, Ruler, Shield, ChevronRight, MapPin,
   Download, Trash2, Mail, MessageSquare, Smartphone, Volume2, RefreshCw,
-  Map, Wifi, Heart, Globe, Type, DollarSign, Clock,
+  Map, Wifi, Heart, Globe, Type, DollarSign, Clock, AlarmClock, BarChart3,
+  WifiOff,
 } from "lucide-react";
 import { usePreferences } from "@/contexts/AppContext";
 import { useToast } from "@/hooks/use-toast";
@@ -248,6 +249,29 @@ export default function Settings() {
           </Card>
         </div>
 
+        {/* Reminders & Insights */}
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Reminders & Insights</h2>
+          <Card className="divide-y">
+            <div className="flex items-center gap-3 p-4">
+              <AlarmClock className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Reminder Notifications</p>
+                <p className="text-sm text-muted-foreground">Get reminders for tracked events</p>
+              </div>
+              <Switch checked={preferences.pushNotifications ?? true} onCheckedChange={(val) => { updatePreferences({ pushNotifications: val }); toast({ title: val ? "Reminders On" : "Reminders Off" }); }} className="tv-focus" />
+            </div>
+            <div className="flex items-center gap-3 p-4">
+              <BarChart3 className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="font-medium">Weekly Insights</p>
+                <p className="text-sm text-muted-foreground">Receive weekly activity summaries</p>
+              </div>
+              <Switch checked={preferences.emailNotifications ?? false} onCheckedChange={(val) => { updatePreferences({ emailNotifications: val }); toast({ title: val ? "Weekly Insights On" : "Weekly Insights Off" }); }} className="tv-focus" />
+            </div>
+          </Card>
+        </div>
+
         {/* Alert Categories */}
         <div>
           <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">{t("settings.alertCategories")}</h2>
@@ -288,8 +312,26 @@ export default function Settings() {
                 <p className="font-medium">{t("settings.offlineMode")}</p>
                 <p className="text-sm text-muted-foreground">Download data for offline use</p>
               </div>
-              <Switch checked={preferences.offlineMode ?? false} onCheckedChange={(val) => { updatePreferences({ offlineMode: val }); }} className="tv-focus" />
+              <Switch checked={preferences.offlineMode ?? false} onCheckedChange={(val) => { 
+                updatePreferences({ offlineMode: val }); 
+                if (val && 'serviceWorker' in navigator) {
+                  navigator.serviceWorker.ready.then(() => {
+                    toast({ title: "Offline Mode Enabled", description: "Cached data will be available offline." });
+                  });
+                } else {
+                  toast({ title: "Offline Mode Disabled" });
+                }
+              }} className="tv-focus" />
             </div>
+            {preferences.offlineMode && (
+              <div className="flex items-center gap-3 p-4">
+                <WifiOff className="h-5 w-5 text-muted-foreground" />
+                <div className="flex-1">
+                  <p className="font-medium">Cached Data Available</p>
+                  <p className="text-sm text-muted-foreground">Last synced: {new Date().toLocaleString()}</p>
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors">
               <Shield className="h-5 w-5 text-muted-foreground" />
               <div className="flex-1">

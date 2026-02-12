@@ -342,7 +342,16 @@ export type Database = {
     }
     Enums: {
       alert_severity: "low" | "medium" | "high" | "critical"
-      app_role: "admin" | "moderator" | "user"
+      app_role:
+        | "admin"
+        | "moderator"
+        | "user"
+        | "owner"
+        | "developer"
+        | "media"
+        | "staff"
+        | "pro_member"
+        | "member"
       notification_type:
         | "earthquake"
         | "volcano"
@@ -478,7 +487,17 @@ export const Constants = {
   public: {
     Enums: {
       alert_severity: ["low", "medium", "high", "critical"],
-      app_role: ["admin", "moderator", "user"],
+      app_role: [
+        "admin",
+        "moderator",
+        "user",
+        "owner",
+        "developer",
+        "media",
+        "staff",
+        "pro_member",
+        "member",
+      ],
       notification_type: [
         "earthquake",
         "volcano",

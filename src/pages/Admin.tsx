@@ -3,12 +3,17 @@ import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
   Shield, Users, Search, Crown, UserCog, User, Loader2, RefreshCw,
-  ChevronDown, Mail, Calendar, AtSign, Code, Camera, Briefcase, Star, UserCheck,
+  ChevronDown, Calendar, AtSign, Code, Camera, Briefcase, Star, UserCheck, Trash2,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -96,6 +101,22 @@ export default function Admin() {
       await fetchUsers();
     } catch (err: any) {
       toast.error("Failed to update role: " + (err.message || "Unknown error"));
+    }
+    setUpdatingRole(null);
+  };
+
+  const handleDeleteUser = async (userId: string, displayName: string) => {
+    setUpdatingRole(userId);
+    try {
+      const res = await supabase.functions.invoke("admin-users", {
+        body: { action: "delete_user", user_id: userId },
+      });
+      if (res.error) throw res.error;
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success(`User "${displayName || "Unnamed"}" has been removed`);
+      await fetchUsers();
+    } catch (err: any) {
+      toast.error("Failed to delete user: " + (err.message || "Unknown error"));
     }
     setUpdatingRole(null);
   };
@@ -220,39 +241,71 @@ export default function Admin() {
                       </div>
                     </div>
 
-                    {/* Role Actions */}
+                    {/* Actions */}
                     {u.id !== user?.id && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" disabled={updatingRole === u.id}>
-                            {updatingRole === u.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <>
-                                Roles <ChevronDown className="h-3 w-3 ms-1" />
-                              </>
-                            )}
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 max-h-64 overflow-y-auto">
-                          {ALL_ROLES.map((role, idx) => {
-                            const has = u.roles.includes(role);
-                            const rc = roleConfig[role];
-                            const Icon = rc.icon;
-                            return (
-                              <DropdownMenuItem
-                                key={role}
-                                onClick={() => handleRoleChange(u.id, role, has ? "remove" : "add")}
-                                className="flex items-center gap-2"
+                      <div className="flex items-center gap-1">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" disabled={updatingRole === u.id}>
+                              {updatingRole === u.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <>
+                                  Roles <ChevronDown className="h-3 w-3 ms-1" />
+                                </>
+                              )}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 max-h-64 overflow-y-auto">
+                            {ALL_ROLES.map((role) => {
+                              const has = u.roles.includes(role);
+                              const rc = roleConfig[role];
+                              const Icon = rc.icon;
+                              return (
+                                <DropdownMenuItem
+                                  key={role}
+                                  onClick={() => handleRoleChange(u.id, role, has ? "remove" : "add")}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Icon className={`h-3.5 w-3.5 ${rc.color}`} />
+                                  <span className="flex-1 capitalize">{role.replace("_", " ")}</span>
+                                  {has && <Badge variant="secondary" className="text-[10px] px-1">Active</Badge>}
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              disabled={updatingRole === u.id || u.roles.includes("owner")}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove User</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to permanently remove <strong>{u.display_name || u.auth_email || "this user"}</strong>? This action cannot be undone and will delete all their data.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteUser(u.id, u.display_name || u.auth_email || "")}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
-                                <Icon className={`h-3.5 w-3.5 ${rc.color}`} />
-                                <span className="flex-1 capitalize">{role.replace("_", " ")}</span>
-                                {has && <Badge variant="secondary" className="text-[10px] px-1">Active</Badge>}
-                              </DropdownMenuItem>
-                            );
-                          })}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                                Remove User
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     )}
                   </div>
                 </Card>

@@ -14,6 +14,10 @@ import {
   Waves,
   Film,
   Settings,
+  Newspaper,
+  Flame,
+  Car,
+  Satellite,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +62,10 @@ const trackingSubmenu = [
 
 const moreMenuItems = [
   { label: "Chill", icon: Film, path: "/chill", gradient: "from-pink-500 to-purple-600" },
+  { label: "News", icon: Newspaper, path: "/news", gradient: "from-blue-500 to-indigo-600" },
+  { label: "Space", icon: Satellite, path: "/space", gradient: "from-indigo-600 to-purple-700" },
+  { label: "Fire Map", icon: Flame, path: "/fires", gradient: "from-red-500 to-orange-600" },
+  { label: "Traffic", icon: Car, path: "/traffic", gradient: "from-amber-500 to-yellow-600" },
   { label: "Settings", icon: Settings, path: "/settings", gradient: "from-slate-500 to-slate-700" },
 ];
 
@@ -81,7 +89,7 @@ export function BottomNavigation() {
   };
 
   const isMoreActive = () => {
-    return ["/chill", "/settings"].some(p => location.pathname.startsWith(p));
+    return ["/chill", "/settings", "/news", "/space", "/fires", "/traffic"].some(p => location.pathname.startsWith(p));
   };
 
   const handleTrackingClick = (e: React.MouseEvent) => {
@@ -145,26 +153,26 @@ export function BottomNavigation() {
             className="fixed inset-0 z-40" 
             onClick={closeAllMenus} 
           />
-          <div className="fixed bottom-20 right-4 left-auto sm:right-4 z-50 bg-card border rounded-xl shadow-xl p-3 animate-fade-in min-w-[160px]">
-            <div className="flex flex-col gap-1.5">
+          <div className="fixed bottom-20 right-4 left-auto sm:right-4 z-50 bg-card border rounded-xl shadow-xl p-3 animate-fade-in min-w-[220px]">
+            <div className="grid grid-cols-2 gap-1.5">
               {moreMenuItems.map((item) => (
                 <button
                   key={item.path}
                   onClick={() => handleSubmenuClick(item.path)}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors tv-focus",
+                    "flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors tv-focus",
                     location.pathname === item.path
                       ? "bg-primary/10 text-primary"
                       : "hover:bg-muted text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <div className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br shrink-0",
+                    "flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br shrink-0",
                     item.gradient
                   )}>
-                    <item.icon className="h-4 w-4 text-white" />
+                    <item.icon className="h-3.5 w-3.5 text-white" />
                   </div>
-                  <span className="text-sm font-medium">{item.label}</span>
+                  <span className="text-xs font-medium">{item.label}</span>
                 </button>
               ))}
             </div>

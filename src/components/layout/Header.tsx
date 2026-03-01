@@ -1,8 +1,9 @@
-import { Menu, Search, Bell, LogIn, User } from "lucide-react";
+import { Menu, Search, Bell, LogIn, User, Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +20,11 @@ interface HeaderProps {
 export function Header({ onMenuClick }: HeaderProps) {
   const { user, signOut } = useAuth();
   const { unreadCount } = useNotifications();
+  const { theme, setTheme } = useTheme();
+
+  const themeIcon = theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
+  const ThemeIcon = themeIcon;
+  const nextTheme = theme === "dark" ? "light" : theme === "light" ? "system" : "dark";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 safe-top">
@@ -42,17 +48,21 @@ export function Header({ onMenuClick }: HeaderProps) {
           <span className="font-heading text-lg font-semibold">SafeTrack</span>
         </Link>
 
-        {/* Right: Search, Notifications, and Auth */}
+        {/* Right: Search, Theme, Notifications, and Auth */}
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            asChild
-            aria-label="Search"
-          >
+          <Button variant="ghost" size="icon" asChild aria-label="Search">
             <Link to="/search">
               <Search className="h-5 w-5 text-foreground" />
             </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(nextTheme)}
+            aria-label="Toggle theme"
+            title={`Theme: ${theme} (click to change)`}
+          >
+            <ThemeIcon className="h-5 w-5" />
           </Button>
           <Button
             variant="ghost"

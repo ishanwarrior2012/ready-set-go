@@ -9,6 +9,10 @@ import {
   Radio,
   Film,
   Orbit,
+  Newspaper,
+  Satellite,
+  Car,
+  Waves,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,62 +25,19 @@ interface QuickAccessItem {
 }
 
 const quickAccessItems: QuickAccessItem[] = [
-  {
-    label: "Flight Radar",
-    description: "Track flights worldwide",
-    icon: Plane,
-    path: "/flights",
-    gradient: "from-electric to-blue-600",
-  },
-  {
-    label: "Marine Traffic",
-    description: "Monitor ships & vessels",
-    icon: Ship,
-    path: "/marine",
-    gradient: "from-cyan-500 to-teal-600",
-  },
-  {
-    label: "Earthquakes",
-    description: "Seismic activity monitor",
-    icon: Mountain,
-    path: "/earthquakes",
-    gradient: "from-amber-500 to-orange-600",
-  },
-  {
-    label: "Volcanoes",
-    description: "Volcanic activity tracker",
-    icon: Flame,
-    path: "/volcanoes",
-    gradient: "from-red-500 to-rose-600",
-  },
-  {
-    label: "Weather",
-    description: "Global weather maps",
-    icon: Cloud,
-    path: "/weather",
-    gradient: "from-sky-500 to-indigo-600",
-  },
-  {
-    label: "Global Radio",
-    description: "Listen to stations worldwide",
-    icon: Radio,
-    path: "/radio",
-    gradient: "from-purple-500 to-violet-600",
-  },
-  {
-    label: "ISS Tracker",
-    description: "Track the space station",
-    icon: Orbit,
-    path: "/iss",
-    gradient: "from-indigo-500 to-blue-600",
-  },
-  {
-    label: "Chill",
-    description: "Movies & Anime streaming",
-    icon: Film,
-    path: "/chill",
-    gradient: "from-pink-500 to-purple-600",
-  },
+  { label: "Flight Radar", description: "Track flights worldwide", icon: Plane, path: "/flights", gradient: "from-electric to-blue-600" },
+  { label: "Marine Traffic", description: "Monitor ships & vessels", icon: Ship, path: "/marine", gradient: "from-cyan-500 to-teal-600" },
+  { label: "Earthquakes", description: "Seismic activity monitor", icon: Mountain, path: "/earthquakes", gradient: "from-amber-500 to-orange-600" },
+  { label: "Volcanoes", description: "Volcanic activity tracker", icon: Flame, path: "/volcanoes", gradient: "from-red-500 to-rose-600" },
+  { label: "Tsunami", description: "Tsunami alerts & warnings", icon: Waves, path: "/tsunami", gradient: "from-blue-500 to-cyan-600" },
+  { label: "Weather", description: "Global weather maps", icon: Cloud, path: "/weather", gradient: "from-sky-500 to-indigo-600" },
+  { label: "Global Radio", description: "Listen to stations worldwide", icon: Radio, path: "/radio", gradient: "from-purple-500 to-violet-600" },
+  { label: "ISS Tracker", description: "Track the space station", icon: Orbit, path: "/iss", gradient: "from-indigo-500 to-blue-600" },
+  { label: "News Feed", description: "Live global news & alerts", icon: Newspaper, path: "/news", gradient: "from-blue-600 to-indigo-700" },
+  { label: "Space Tracker", description: "Satellites, asteroids & more", icon: Satellite, path: "/space", gradient: "from-violet-600 to-purple-800" },
+  { label: "Fire Map", description: "Wildfire tracking & alerts", icon: Flame, path: "/fires", gradient: "from-orange-500 to-red-600" },
+  { label: "Traffic Monitor", description: "Live road incidents globally", icon: Car, path: "/traffic", gradient: "from-amber-500 to-yellow-600" },
+  { label: "Chill", description: "Movies & Anime streaming", icon: Film, path: "/chill", gradient: "from-pink-500 to-purple-600" },
 ];
 
 interface QuickAccessGridProps {

@@ -1,684 +1,967 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { ChevronDown, ChevronUp, Clock, Star, Zap, Award, Eye, Layers } from "lucide-react";
 
-const GOLD = "hsl(43 74% 49%)";
-const GOLD_LIGHT = "hsl(43 74% 70%)";
+// ─── ASTRONOMICAL CALCULATIONS ───────────────────────────────────────────────
 
-const quickFacts = [
-  { value: "63", label: "Complications", icon: "⚙️" },
-  { value: "2,877", label: "Components", icon: "🔩" },
-  { value: "8 Years", label: "Development", icon: "📅" },
-  { value: "Double-Sided", label: "Dial Design", icon: "💎" },
-  { value: "Chinese", label: "Perpetual Calendar", icon: "🌙" },
-  { value: "Westminster", label: "Minute Repeater", icon: "🔔" },
-  { value: "11", label: "Astronomical Complications", icon: "⭐" },
-  { value: "1755", label: "Year Founded", icon: "🏛️" },
+function toRad(deg: number) { return deg * Math.PI / 180; }
+function toDeg(rad: number) { return rad * 180 / Math.PI; }
+
+function julianDay(date: Date): number {
+  const a = Math.floor((14 - (date.getMonth() + 1)) / 12);
+  const y = date.getFullYear() + 4800 - a;
+  const m = (date.getMonth() + 1) + 12 * a - 3;
+  return date.getDate()
+    + Math.floor((153 * m + 2) / 5)
+    + 365 * y
+    + Math.floor(y / 4)
+    - Math.floor(y / 100)
+    + Math.floor(y / 400)
+    - 32045
+    + (date.getHours() - 12) / 24
+    + date.getMinutes() / 1440
+    + date.getSeconds() / 86400;
+}
+
+function moonPhase(date: Date): { phase: number; name: string; age: number; illumination: number } {
+  const jd = julianDay(date);
+  const newMoon2000 = 2451549.5;
+  const synodicMonth = 29.53058867;
+  const daysSince = jd - newMoon2000;
+  const phase = ((daysSince % synodicMonth) + synodicMonth) % synodicMonth;
+  const illumination = 0.5 * (1 - Math.cos(2 * Math.PI * phase / synodicMonth));
+  const names = ["New Moon","Waxing Crescent","First Quarter","Waxing Gibbous","Full Moon","Waning Gibbous","Last Quarter","Waning Crescent"];
+  const idx = Math.floor((phase / synodicMonth) * 8) % 8;
+  return { phase: phase / synodicMonth, name: names[idx], age: phase, illumination };
+}
+
+function equationOfTime(date: Date): number {
+  const D = julianDay(date) - 2451545.0;
+  const g = (357.529 + 0.98560028 * D) % 360;
+  const q = (280.459 + 0.98564736 * D) % 360;
+  const L = (q + 1.915 * Math.sin(toRad(g)) + 0.020 * Math.sin(toRad(2 * g))) % 360;
+  const e = 23.439 - 0.0000004 * D;
+  const RA = toDeg(Math.atan2(Math.cos(toRad(e)) * Math.sin(toRad(L)), Math.cos(toRad(L))));
+  const EoT = q - 0.0057183 - RA + 1.915 * Math.sin(toRad(g)) * 0 + 0.020 * 0; // simplified
+  return ((q - RA + 180) % 360 - 180) * 4; // in minutes
+}
+
+function siderealTime(date: Date, longitude = 0): number {
+  const jd = julianDay(date);
+  const T = (jd - 2451545.0) / 36525;
+  const gmst = 280.46061837 + 360.98564736629 * (jd - 2451545) + 0.000387933 * T * T - T * T * T / 38710000;
+  return ((gmst + longitude) % 360 + 360) % 360;
+}
+
+function sunPosition(date: Date): { altitude: number; azimuth: number; declination: number; rightAscension: number } {
+  const D = julianDay(date) - 2451545.0;
+  const g = toRad((357.529 + 0.98560028 * D) % 360);
+  const q = toRad((280.459 + 0.98564736 * D) % 360);
+  const L = toRad((toDeg(q) + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) % 360);
+  const e = toRad(23.439 - 0.0000004 * D);
+  const declination = Math.asin(Math.sin(e) * Math.sin(L));
+  const rightAscension = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L));
+  const lat = toRad(40.7128); // Default lat (NY)
+  const ha = toRad(siderealTime(date)) - rightAscension;
+  const altitude = Math.asin(Math.sin(lat) * Math.sin(declination) + Math.cos(lat) * Math.cos(declination) * Math.cos(ha));
+  const azimuth = Math.atan2(-Math.sin(ha), Math.tan(declination) * Math.cos(lat) - Math.sin(lat) * Math.cos(ha));
+  return { altitude: toDeg(altitude), azimuth: (toDeg(azimuth) + 360) % 360, declination: toDeg(declination), rightAscension: toDeg(rightAscension) };
+}
+
+function getSunriseSunset(date: Date, lat = 40.7128, lng = -74.006): { sunrise: Date; sunset: Date; daylength: number } {
+  const jd = julianDay(date);
+  const n = jd - 2451545.0 + 0.0008;
+  const Js = n - lng / 360;
+  const M = toRad((357.5291 + 0.98560028 * Js) % 360);
+  const C = 1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M);
+  const λ = toRad((toDeg(M) + C + 180 + 102.9372) % 360);
+  const Jtransit = 2451545.0 + Js + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * λ);
+  const δ = Math.asin(Math.sin(λ) * Math.sin(toRad(23.44)));
+  const cosω = (Math.sin(toRad(-0.83)) - Math.sin(toRad(lat)) * Math.sin(δ)) / (Math.cos(toRad(lat)) * Math.cos(δ));
+  const ω = Math.acos(Math.max(-1, Math.min(1, cosω)));
+  const Jrise = Jtransit - toDeg(ω) / 360;
+  const Jset = Jtransit + toDeg(ω) / 360;
+  const toDate = (jd: number) => new Date((jd - 2440587.5) * 86400000);
+  const sunrise = toDate(Jrise);
+  const sunset = toDate(Jset);
+  const daylength = (Jset - Jrise) * 24;
+  return { sunrise, sunset, daylength };
+}
+
+function getSeason(date: Date): { name: string; progress: number; icon: string; color: string } {
+  const month = date.getMonth();
+  const day = date.getDate();
+  // Northern hemisphere
+  if ((month === 2 && day >= 20) || month === 3 || month === 4 || (month === 5 && day < 21))
+    return { name: "Spring", progress: ((month - 2) * 30 + day) / 92, icon: "🌸", color: "hsl(320 60% 60%)" };
+  if ((month === 5 && day >= 21) || month === 6 || month === 7 || (month === 8 && day < 23))
+    return { name: "Summer", progress: ((month - 5) * 30 + day - 21) / 92, icon: "☀️", color: "hsl(43 74% 55%)" };
+  if ((month === 8 && day >= 23) || month === 9 || month === 10 || (month === 11 && day < 21))
+    return { name: "Autumn", progress: ((month - 8) * 30 + day - 23) / 91, icon: "🍂", color: "hsl(25 80% 50%)" };
+  return { name: "Winter", progress: ((month < 2 ? month + 1 : 0) * 30 + day) / 89, icon: "❄️", color: "hsl(200 60% 60%)" };
+}
+
+function getChineseLunisolar(date: Date): { year: number; animal: string; element: string; monthName: string; dayNum: number; isLeapMonth: boolean } {
+  const animals = ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"];
+  const elements = ["Wood","Wood","Fire","Fire","Earth","Earth","Metal","Metal","Water","Water"];
+  const months = ["正月","二月","三月","四月","五月","六月","七月","八月","九月","十月","冬月","腊月"];
+  // Simplified calculation - approximate Chinese year
+  const year = date.getFullYear();
+  const chineseYear = year - 1900 + (date.getMonth() >= 1 ? 1 : 0);
+  const animal = animals[((year - 2020) % 12 + 12) % 12];
+  const element = elements[((year - 2020) % 10 + 10) % 10];
+  // Approximate lunar day (29.53 days per lunar month)
+  const jd = julianDay(date);
+  const lunarDay = Math.floor(((jd - 2451549.5) % 29.53058867 + 29.53058867) % 29.53058867) + 1;
+  const lunarMonth = Math.floor(((jd - 2451549.5) / 29.53058867 + 0.5) % 12);
+  return { year: chineseYear, animal, element, monthName: months[Math.abs(lunarMonth) % 12], dayNum: lunarDay, isLeapMonth: false };
+}
+
+function getZodiac(date: Date): { sign: string; symbol: string; element: string; startDate: string } {
+  const signs = [
+    { sign: "Capricorn", symbol: "♑", element: "Earth", startDate: "Dec 22" },
+    { sign: "Aquarius", symbol: "♒", element: "Air", startDate: "Jan 20" },
+    { sign: "Pisces", symbol: "♓", element: "Water", startDate: "Feb 19" },
+    { sign: "Aries", symbol: "♈", element: "Fire", startDate: "Mar 21" },
+    { sign: "Taurus", symbol: "♉", element: "Earth", startDate: "Apr 20" },
+    { sign: "Gemini", symbol: "♊", element: "Air", startDate: "May 21" },
+    { sign: "Cancer", symbol: "♋", element: "Water", startDate: "Jun 21" },
+    { sign: "Leo", symbol: "♌", element: "Fire", startDate: "Jul 23" },
+    { sign: "Virgo", symbol: "♍", element: "Earth", startDate: "Aug 23" },
+    { sign: "Libra", symbol: "♎", element: "Air", startDate: "Sep 23" },
+    { sign: "Scorpio", symbol: "♏", element: "Water", startDate: "Oct 23" },
+    { sign: "Sagittarius", symbol: "♐", element: "Fire", startDate: "Nov 22" },
+  ];
+  const m = date.getMonth() + 1, d = date.getDate();
+  if ((m === 12 && d >= 22) || (m === 1 && d < 20)) return signs[0];
+  if ((m === 1 && d >= 20) || (m === 2 && d < 19)) return signs[1];
+  if ((m === 2 && d >= 19) || (m === 3 && d < 21)) return signs[2];
+  if ((m === 3 && d >= 21) || (m === 4 && d < 20)) return signs[3];
+  if ((m === 4 && d >= 20) || (m === 5 && d < 21)) return signs[4];
+  if ((m === 5 && d >= 21) || (m === 6 && d < 21)) return signs[5];
+  if ((m === 6 && d >= 21) || (m === 7 && d < 23)) return signs[6];
+  if ((m === 7 && d >= 23) || (m === 8 && d < 23)) return signs[7];
+  if ((m === 8 && d >= 23) || (m === 9 && d < 23)) return signs[8];
+  if ((m === 9 && d >= 23) || (m === 10 && d < 23)) return signs[9];
+  if ((m === 10 && d >= 23) || (m === 11 && d < 22)) return signs[10];
+  return signs[11];
+}
+
+function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
+function getLeapYearInfo(year: number): { current: boolean; last: number; next: number; cyclePos: number } {
+  let last = year - 1;
+  while (!isLeapYear(last)) last--;
+  let next = year + 1;
+  while (!isLeapYear(next)) next++;
+  return { current: isLeapYear(year), last, next, cyclePos: (year - last) };
+}
+
+// ─── STAR DATA (simplified bright stars) ──────────────────────────────────
+const STARS = [
+  { name: "Sirius", ra: 101.3, dec: -16.7, mag: -1.46 },
+  { name: "Canopus", ra: 95.9, dec: -52.7, mag: -0.72 },
+  { name: "Arcturus", ra: 213.9, dec: 19.2, mag: -0.05 },
+  { name: "Vega", ra: 279.2, dec: 38.8, mag: 0.03 },
+  { name: "Capella", ra: 79.2, dec: 46.0, mag: 0.08 },
+  { name: "Rigel", ra: 78.6, dec: -8.2, mag: 0.13 },
+  { name: "Procyon", ra: 114.8, dec: 5.2, mag: 0.34 },
+  { name: "Betelgeuse", ra: 88.8, dec: 7.4, mag: 0.42 },
+  { name: "Altair", ra: 297.7, dec: 8.9, mag: 0.77 },
+  { name: "Aldebaran", ra: 68.9, dec: 16.5, mag: 0.85 },
+  { name: "Spica", ra: 201.3, dec: -11.2, mag: 0.97 },
+  { name: "Antares", ra: 247.4, dec: -26.4, mag: 1.06 },
+  { name: "Pollux", ra: 116.3, dec: 28.0, mag: 1.14 },
+  { name: "Fomalhaut", ra: 344.4, dec: -29.6, mag: 1.16 },
+  { name: "Deneb", ra: 310.4, dec: 45.3, mag: 1.25 },
+  { name: "Regulus", ra: 152.1, dec: 11.97, mag: 1.35 },
+  { name: "Castor", ra: 113.6, dec: 31.9, mag: 1.58 },
+  { name: "Bellatrix", ra: 81.3, dec: 6.35, mag: 1.64 },
+  { name: "Elnath", ra: 81.6, dec: 28.6, mag: 1.65 },
+  { name: "Mimosa", ra: 191.9, dec: -59.7, mag: 1.25 },
+  { name: "Alnilam", ra: 84.1, dec: -1.2, mag: 1.70 },
+  { name: "Alnitak", ra: 85.2, dec: -1.94, mag: 1.77 },
+  { name: "Dubhe", ra: 165.9, dec: 61.75, mag: 1.79 },
+  { name: "Mirfak", ra: 51.1, dec: 49.86, mag: 1.79 },
+  { name: "Wezen", ra: 107.1, dec: -26.39, mag: 1.83 },
+  { name: "Alioth", ra: 193.5, dec: 55.96, mag: 1.76 },
+  { name: "Kaus Australis", ra: 276.0, dec: -34.38, mag: 1.79 },
+  { name: "Avior", ra: 125.6, dec: -59.51, mag: 1.86 },
+  { name: "Alkaid", ra: 206.9, dec: 49.31, mag: 1.85 },
+  { name: "Sargas", ra: 264.3, dec: -42.99, mag: 1.86 },
 ];
 
-const dialFeatures = [
-  {
-    id: "perpetual",
-    label: "Perpetual Calendar",
-    angle: 30,
-    description: "An advanced mechanical system that automatically accounts for months of different lengths, including leap years — with no manual correction needed until 2100."
-  },
-  {
-    id: "chinese",
-    label: "Chinese Lunisolar Calendar",
-    angle: 90,
-    description: "A world-first complication that displays the traditional Chinese lunisolar calendar, including the 12 zodiac animals, leap months, and Chinese New Year dates."
-  },
-  {
-    id: "moonphase",
-    label: "Moon Phases",
-    angle: 150,
-    description: "Ultra-precise moon phase display accurate to within one day every 1,058 years. Displays both northern and southern hemisphere perspectives."
-  },
-  {
-    id: "sunrise",
-    label: "Sunrise & Sunset",
-    angle: 210,
-    description: "Displays precise sunrise and sunset times for any given location on Earth, calculated mechanically using geographic coordinates encoded at manufacture."
-  },
-  {
-    id: "equation",
-    label: "Equation of Time",
-    angle: 270,
-    description: "Shows the difference between civil time and apparent solar time — a difference that varies up to ±16 minutes throughout the year due to Earth's elliptical orbit."
-  },
-  {
-    id: "sidereal",
-    label: "Sidereal Time",
-    angle: 330,
-    description: "Displays time based on Earth's rotation relative to distant stars rather than the Sun — essential for astronomical observations and navigation."
-  },
-];
+// ─── COMPONENTS ──────────────────────────────────────────────────────────────
 
-const backDialFeatures = [
-  {
-    id: "starchart",
-    label: "Star Chart",
-    angle: 45,
-    description: "A rotating celestial map showing the stars visible from a specific latitude, with the sky rotating at the correct astronomical rate."
-  },
-  {
-    id: "zodiac",
-    label: "Zodiac Display",
-    angle: 135,
-    description: "Shows the Sun's position within the 12 zodiac constellations as it progresses through its annual journey across the ecliptic."
-  },
-  {
-    id: "westminster",
-    label: "Westminster Repeater",
-    angle: 225,
-    description: "On demand, the watch chimes the iconic Westminster melody on four gongs — the same sequence as Big Ben — indicating hours, quarter hours, and minutes."
-  },
-  {
-    id: "tourbillon",
-    label: "Tourbillon",
-    angle: 315,
-    description: "A rotating escapement cage that continuously rotates the entire balance wheel assembly to counteract the effects of gravity on timekeeping precision."
-  },
-];
+function GoldDivider() {
+  return <div className="w-full h-px my-2" style={{ background: "linear-gradient(90deg, transparent, hsl(43 74% 49%), transparent)" }} />;
+}
 
-const complicationGroups = [
-  {
-    title: "Astronomical Functions",
-    icon: "🌌",
-    color: "from-indigo-900/50 to-purple-900/50",
-    border: "border-indigo-500/30",
-    items: [
-      "Sky chart with stellar positions",
-      "Zodiac constellation display",
-      "Sidereal time",
-      "Solar time",
-      "Equation of time",
-      "Sunrise and sunset times",
-      "Seasons and solstices",
-      "Orbital indicators",
-      "Celestial equator reference",
-      "Ecliptic plane indicator",
-      "Lunar nodes display",
-    ]
-  },
-  {
-    title: "Calendar Functions",
-    icon: "📅",
-    color: "from-amber-900/50 to-yellow-900/50",
-    border: "border-amber-500/30",
-    items: [
-      "Gregorian perpetual calendar",
-      "Chinese perpetual calendar",
-      "Leap year cycle indicator",
-      "Lunar month display",
-      "Chinese zodiac animals",
-      "Chinese New Year date",
-      "Intercalary month indicator",
-      "Day and date display",
-      "Month indicator",
-      "Four-digit year display",
-      "Season indicator",
-    ]
-  },
-  {
-    title: "Acoustic Complications",
-    icon: "🔔",
-    color: "from-rose-900/50 to-pink-900/50",
-    border: "border-rose-500/30",
-    items: [
-      "Westminster minute repeater",
-      "Four-gong chime mechanism",
-      "Hours chime",
-      "Quarter-hour chime",
-      "Minute-precision chime",
-      "Adjustable strike on demand",
-    ]
-  },
-  {
-    title: "Precision Mechanisms",
-    icon: "⚙️",
-    color: "from-slate-800/50 to-zinc-800/50",
-    border: "border-slate-400/30",
-    items: [
-      "Flying tourbillon regulator",
-      "High-precision balance wheel",
-      "Variable inertia regulation",
-      "Anti-shock protection",
-      "Dual mainspring barrels",
-      "72-hour power reserve",
-    ]
-  },
-];
-
-const comparisonWatches = [
-  { name: "Patek Philippe Calibre 89", year: 1989, complications: 33, note: "Held world record for 25 years" },
-  { name: "Vacheron Constantin Reference 57260", year: 2015, complications: 57, note: "Previous Vacheron record" },
-  { name: "Patek Philippe Grandmaster Chime", year: 2014, complications: 20, note: "Most complicated Patek wristwatch" },
-  { name: "Berkley Grand Complication", year: 2015, complications: 63, note: "Current world record holder ✦" },
-];
-
-const craftSteps = [
-  { step: "01", title: "Les Cabinotiers Atelier", desc: "A team of master watchmakers and artisans in Geneva's most exclusive atelier dedicate years to a single timepiece." },
-  { step: "02", title: "Hand Engraving", desc: "Every surface is engraved by hand using traditional gravers — thousands of cuts to create intricate patterns and decorations." },
-  { step: "03", title: "Côtes de Genève Finishing", desc: "Each component receives the iconic Geneva stripes — parallel lines polished to mirror perfection under magnification." },
-  { step: "04", title: "Beveling & Anglage", desc: "Every edge and chamfer is hand-polished at 45° creating the signature shimmering aesthetic of fine Swiss horology." },
-  { step: "05", title: "Hand Assembly", desc: "2,877 individual components assembled without automation — each fit adjusted by hand with tolerances measured in microns." },
-  { step: "06", title: "Final Regulation", desc: "The completed movement is regulated over weeks in multiple positions, temperatures, and orientations for maximum accuracy." },
-];
-
-function WatchDialSVG({ features, label }: { features: typeof dialFeatures; label: string }) {
-  const [hovered, setHovered] = useState<string | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
-
-  const selectedFeature = features.find(f => f.id === selected);
-
+function SectionTitle({ children, sub }: { children: React.ReactNode; sub?: string }) {
   return (
-    <div className="flex flex-col items-center gap-6">
-      <p className="text-xs uppercase tracking-widest" style={{ color: GOLD_LIGHT }}>{label}</p>
-      <div className="relative" style={{ width: 280, height: 280 }}>
-        {/* Outer ring */}
-        <svg width={280} height={280} viewBox="0 0 280 280" className="absolute inset-0">
-          <defs>
-            <radialGradient id={`grad-${label}`} cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="hsl(215 28% 18%)" />
-              <stop offset="100%" stopColor="hsl(215 28% 10%)" />
-            </radialGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-              <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-          </defs>
-          {/* Case */}
-          <circle cx={140} cy={140} r={135} fill="none" stroke="hsl(43 74% 40%)" strokeWidth={3} />
-          <circle cx={140} cy={140} r={130} fill={`url(#grad-${label})`} />
-          {/* Minute track */}
-          {Array.from({ length: 60 }).map((_, i) => {
-            const a = (i * 6 - 90) * (Math.PI / 180);
-            const r1 = i % 5 === 0 ? 118 : 122;
-            const r2 = 128;
-            return (
-              <line
-                key={i}
-                x1={140 + r1 * Math.cos(a)}
-                y1={140 + r1 * Math.sin(a)}
-                x2={140 + r2 * Math.cos(a)}
-                y2={140 + r2 * Math.sin(a)}
-                stroke={i % 5 === 0 ? "hsl(43 74% 60%)" : "hsl(43 74% 35%)"}
-                strokeWidth={i % 5 === 0 ? 1.5 : 0.8}
-              />
-            );
-          })}
-          {/* Inner decorative rings */}
-          <circle cx={140} cy={140} r={108} fill="none" stroke="hsl(43 74% 30%)" strokeWidth={0.5} />
-          <circle cx={140} cy={140} r={80} fill="none" stroke="hsl(43 74% 25%)" strokeWidth={0.5} />
-          {/* Center dot */}
-          <circle cx={140} cy={140} r={4} fill="hsl(43 74% 60%)" />
-          {/* Hands */}
-          <line x1={140} y1={140} x2={140} y2={70} stroke="hsl(43 74% 70%)" strokeWidth={2} strokeLinecap="round" filter="url(#glow)" />
-          <line x1={140} y1={140} x2={185} y2={155} stroke="hsl(0 0% 90%)" strokeWidth={1.5} strokeLinecap="round" />
-          {/* Feature hotspots */}
-          {features.map(f => {
-            const a = (f.angle - 90) * (Math.PI / 180);
-            const r = 90;
-            const cx = 140 + r * Math.cos(a);
-            const cy = 140 + r * Math.sin(a);
-            const isActive = hovered === f.id || selected === f.id;
-            return (
-              <g key={f.id}
-                onMouseEnter={() => setHovered(f.id)}
-                onMouseLeave={() => setHovered(null)}
-                onClick={() => setSelected(selected === f.id ? null : f.id)}
-                style={{ cursor: "pointer" }}
-              >
-                <circle cx={cx} cy={cy} r={isActive ? 10 : 7}
-                  fill={isActive ? "hsl(43 74% 49%)" : "hsl(43 74% 20%)"}
-                  stroke="hsl(43 74% 60%)" strokeWidth={1.5}
-                  style={{ transition: "all 0.2s" }}
-                />
-                {isActive && (
-                  <circle cx={cx} cy={cy} r={14}
-                    fill="none" stroke="hsl(43 74% 49%)" strokeWidth={1}
-                    opacity={0.5}
-                  />
-                )}
-              </g>
-            );
-          })}
-        </svg>
-      </div>
-      {/* Info panel */}
-      <div className="w-full min-h-[80px] rounded-xl border p-4 transition-all duration-300"
-        style={{
-          background: "hsl(215 28% 14% / 0.8)",
-          borderColor: selected ? "hsl(43 74% 40%)" : "hsl(215 28% 22%)",
-          backdropFilter: "blur(10px)"
-        }}>
-        {selectedFeature ? (
-          <div className="animate-fade-in">
-            <p className="text-sm font-semibold mb-1" style={{ color: GOLD }}>{selectedFeature.label}</p>
-            <p className="text-xs leading-relaxed" style={{ color: "hsl(210 20% 75%)" }}>{selectedFeature.description}</p>
-          </div>
-        ) : (
-          <p className="text-xs text-center" style={{ color: "hsl(215 16% 50%)" }}>
-            Tap a golden dot to explore a complication
-          </p>
-        )}
+    <div className="mb-6">
+      <h2 className="text-2xl font-bold tracking-widest uppercase" style={{ color: "hsl(43 74% 55%)" }}>{children}</h2>
+      {sub && <p className="text-sm mt-1" style={{ color: "hsl(43 74% 35%)" }}>{sub}</p>}
+      <GoldDivider />
+    </div>
+  );
+}
+
+function DataCard({ title, value, sub, icon, accent }: { title: string; value: string; sub?: string; icon?: string; accent?: string }) {
+  return (
+    <div className="rounded-xl p-4 border relative overflow-hidden"
+      style={{ background: "hsl(222 47% 6%)", borderColor: "hsl(43 74% 25%)", boxShadow: "0 0 20px hsl(43 74% 10%)" }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 80% 20%, hsl(43 74% 20% / 0.15), transparent 60%)" }} />
+      <div className="relative">
+        {icon && <div className="text-2xl mb-2">{icon}</div>}
+        <div className="text-xs uppercase tracking-widest mb-1" style={{ color: "hsl(43 74% 40%)" }}>{title}</div>
+        <div className="text-xl font-bold" style={{ color: accent || "hsl(43 74% 65%)" }}>{value}</div>
+        {sub && <div className="text-xs mt-1" style={{ color: "hsl(43 74% 35%)" }}>{sub}</div>}
       </div>
     </div>
   );
 }
 
-function ComplicationGroup({ group, index }: { group: typeof complicationGroups[0]; index: number }) {
-  const [open, setOpen] = useState(false);
-
+// ─── MOON PHASE SVG ──────────────────────────────────────────────────────────
+function MoonPhaseSVG({ phase, illumination }: { phase: number; illumination: number }) {
+  const size = 120;
+  const r = 50;
+  const cx = 60, cy = 60;
+  // Phase: 0=new, 0.25=first quarter, 0.5=full, 0.75=last quarter
+  const isWaxing = phase < 0.5;
+  const angle = phase * 360;
+  // Build path for illuminated portion
+  let path = "";
+  if (phase < 0.02 || phase > 0.98) {
+    // New moon - dark circle
+    path = `M ${cx} ${cy-r} A ${r} ${r} 0 1 1 ${cx} ${cy+r} A ${r} ${r} 0 1 1 ${cx} ${cy-r}`;
+  } else if (Math.abs(phase - 0.5) < 0.02) {
+    // Full moon
+    path = `M ${cx} ${cy-r} A ${r} ${r} 0 1 1 ${cx} ${cy+r} A ${r} ${r} 0 1 1 ${cx} ${cy-r}`;
+  } else {
+    const xScale = Math.cos(phase * 2 * Math.PI);
+    const rx = Math.abs(r * xScale);
+    const sweep1 = isWaxing ? 0 : 1;
+    const sweep2 = isWaxing ? 1 : 0;
+    path = `M ${cx} ${cy-r} A ${rx} ${r} 0 0 ${sweep1} ${cx} ${cy+r} A ${r} ${r} 0 0 ${sweep2} ${cx} ${cy-r}`;
+  }
+  const moonFill = (phase < 0.02 || phase > 0.98) ? "hsl(222 20% 12%)" : "hsl(43 50% 85%)";
+  const darkFill = "hsl(222 20% 10%)";
   return (
-    <div
-      className={`rounded-2xl border overflow-hidden transition-all duration-300 ${group.border}`}
-      style={{ background: "hsl(215 28% 12% / 0.7)", backdropFilter: "blur(20px)" }}
-    >
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between p-5 gap-4"
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">{group.icon}</span>
-          <div className="text-left">
-            <p className="font-semibold text-sm" style={{ color: GOLD }}>{group.title}</p>
-            <p className="text-xs" style={{ color: "hsl(215 16% 55%)" }}>{group.items.length} complications</p>
-          </div>
-        </div>
-        {open ? <ChevronUp className="h-4 w-4 shrink-0" style={{ color: GOLD_LIGHT }} />
-               : <ChevronDown className="h-4 w-4 shrink-0" style={{ color: GOLD_LIGHT }} />}
-      </button>
-      {open && (
-        <div className={`px-5 pb-5 animate-fade-in bg-gradient-to-b ${group.color} pt-2`}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {group.items.map((item, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: GOLD }} />
-                <span className="text-xs" style={{ color: "hsl(210 20% 80%)" }}>{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <defs>
+        <radialGradient id="moonGlow" cx="50%" cy="50%">
+          <stop offset="0%" stopColor="hsl(43 50% 95%)" />
+          <stop offset="100%" stopColor="hsl(43 30% 70%)" />
+        </radialGradient>
+        <filter id="moonFilter">
+          <feGaussianBlur stdDeviation="1" />
+        </filter>
+      </defs>
+      {/* Dark circle (night side) */}
+      <circle cx={cx} cy={cy} r={r} fill={darkFill} stroke="hsl(43 20% 30%)" strokeWidth="1" />
+      {/* Illuminated portion */}
+      {phase > 0.02 && phase < 0.98 && (
+        <path d={path} fill="url(#moonGlow)" />
       )}
-    </div>
+      {(phase < 0.02 || phase > 0.98) && phase < 0.5 && (
+        <circle cx={cx} cy={cy} r={r} fill={darkFill} />
+      )}
+      {(Math.abs(phase - 0.5) < 0.02) && (
+        <circle cx={cx} cy={cy} r={r} fill="url(#moonGlow)" />
+      )}
+      {/* Subtle craters */}
+      <circle cx={cx+15} cy={cy-10} r={4} fill="none" stroke="hsl(43 20% 75%)" strokeWidth="0.5" opacity="0.4" />
+      <circle cx={cx-20} cy={cy+15} r={6} fill="none" stroke="hsl(43 20% 75%)" strokeWidth="0.5" opacity="0.3" />
+      <circle cx={cx+5} cy={cy+20} r={3} fill="none" stroke="hsl(43 20% 75%)" strokeWidth="0.5" opacity="0.35" />
+    </svg>
   );
 }
 
-// Animated rotating watch crown SVG
-function WatchHero() {
-  const [rotation, setRotation] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRotation(r => (r + 0.3) % 360);
-    }, 16);
-    return () => clearInterval(interval);
-  }, []);
-
+// ─── STAR CHART SVG ──────────────────────────────────────────────────────────
+function StarChartSVG({ siderealDeg }: { siderealDeg: number }) {
+  const size = 280;
+  const cx = size / 2, cy = size / 2;
+  const radius = size / 2 - 10;
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 320, height: 320 }}>
-      {/* Glow */}
-      <div className="absolute inset-0 rounded-full blur-3xl opacity-30"
-        style={{ background: "radial-gradient(circle, hsl(43 74% 49%), transparent 70%)" }} />
-      <svg width={300} height={300} viewBox="0 0 300 300">
-        <defs>
-          <radialGradient id="caseGrad" cx="40%" cy="30%" r="70%">
-            <stop offset="0%" stopColor="hsl(43 30% 55%)" />
-            <stop offset="40%" stopColor="hsl(43 60% 35%)" />
-            <stop offset="100%" stopColor="hsl(43 40% 15%)" />
-          </radialGradient>
-          <radialGradient id="dialGrad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="hsl(215 28% 20%)" />
-            <stop offset="100%" stopColor="hsl(215 28% 8%)" />
-          </radialGradient>
-          <filter id="heroGlow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-            <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
-        {/* Case shadow */}
-        <ellipse cx={150} cy={158} rx={128} ry={133} fill="hsl(0 0% 0% / 0.4)" />
-        {/* Case body */}
-        <circle cx={150} cy={150} r={130} fill="url(#caseGrad)" />
-        {/* Case bezel */}
-        <circle cx={150} cy={150} r={128} fill="none" stroke="hsl(43 74% 55%)" strokeWidth={3} />
-        <circle cx={150} cy={150} r={122} fill="none" stroke="hsl(43 74% 30%)" strokeWidth={1} />
-        {/* Dial */}
-        <circle cx={150} cy={150} r={115} fill="url(#dialGrad)" />
-        {/* Minute track */}
-        {Array.from({ length: 60 }).map((_, i) => {
-          const a = ((i * 6) - 90) * Math.PI / 180;
-          const r1 = i % 5 === 0 ? 103 : 107;
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="mx-auto">
+      <defs>
+        <radialGradient id="skyGrad" cx="50%" cy="50%">
+          <stop offset="0%" stopColor="hsl(230 40% 12%)" />
+          <stop offset="100%" stopColor="hsl(222 50% 4%)" />
+        </radialGradient>
+        <clipPath id="skyClip">
+          <circle cx={cx} cy={cy} r={radius} />
+        </clipPath>
+      </defs>
+      <circle cx={cx} cy={cy} r={radius} fill="url(#skyGrad)" stroke="hsl(43 74% 30%)" strokeWidth="1.5" />
+      {/* Horizon circles */}
+      {[0.3, 0.6, 0.9].map(f => (
+        <circle key={f} cx={cx} cy={cy} r={radius * f} fill="none" stroke="hsl(43 74% 20%)" strokeWidth="0.5" strokeDasharray="4 4" opacity="0.5" />
+      ))}
+      {/* Cardinal lines */}
+      <line x1={cx} y1={10} x2={cx} y2={size-10} stroke="hsl(43 74% 25%)" strokeWidth="0.5" opacity="0.4" />
+      <line x1={10} y1={cy} x2={size-10} y2={cy} stroke="hsl(43 74% 25%)" strokeWidth="0.5" opacity="0.4" />
+      <text x={cx} y={18} textAnchor="middle" fill="hsl(43 74% 50%)" fontSize="9" fontWeight="bold">N</text>
+      <text x={size-8} y={cy+4} textAnchor="middle" fill="hsl(43 74% 50%)" fontSize="9" fontWeight="bold">E</text>
+      <text x={cx} y={size-4} textAnchor="middle" fill="hsl(43 74% 50%)" fontSize="9" fontWeight="bold">S</text>
+      <text x={8} y={cy+4} textAnchor="middle" fill="hsl(43 74% 50%)" fontSize="9" fontWeight="bold">W</text>
+      {/* Stars */}
+      <g clipPath="url(#skyClip)">
+        {STARS.map((star) => {
+          // Project RA/Dec to screen coords using sidereal rotation
+          const raAdj = ((star.ra - siderealDeg) % 360 + 360) % 360;
+          const raRad = toRad(raAdj - 180);
+          const decRad = toRad(star.dec);
+          const projR = radius * (90 - star.dec) / 90;
+          const x = cx + projR * Math.sin(raRad + Math.PI);
+          const y = cy - projR * Math.cos(raRad + Math.PI) * 0.7;
+          const starR = Math.max(0.8, 3 - star.mag * 1.2);
+          const brightness = Math.max(0.3, 1 - star.mag * 0.3);
+          if (x < 0 || x > size || y < 0 || y > size) return null;
           return (
-            <line key={i}
-              x1={150 + r1 * Math.cos(a)} y1={150 + r1 * Math.sin(a)}
-              x2={150 + 112 * Math.cos(a)} y2={150 + 112 * Math.sin(a)}
-              stroke={i % 5 === 0 ? "hsl(43 74% 65%)" : "hsl(43 74% 35%)"}
-              strokeWidth={i % 5 === 0 ? 2 : 0.8}
-            />
+            <g key={star.name}>
+              <circle cx={x} cy={y} r={starR + 2} fill={`hsl(43 74% 70% / ${brightness * 0.2})`} />
+              <circle cx={x} cy={y} r={starR} fill={`hsl(43 74% 90% / ${brightness})`} />
+              {star.mag < 0.5 && (
+                <text x={x + 5} y={y + 3} fill="hsl(43 74% 60%)" fontSize="7" opacity="0.7">{star.name}</text>
+              )}
+            </g>
           );
         })}
-        {/* Sub-dials */}
-        <circle cx={150} cy={110} r={18} fill="hsl(215 28% 14%)" stroke="hsl(43 74% 40%)" strokeWidth={1} />
-        <circle cx={105} cy={165} r={14} fill="hsl(215 28% 14%)" stroke="hsl(43 74% 40%)" strokeWidth={1} />
-        <circle cx={195} cy={165} r={14} fill="hsl(215 28% 14%)" stroke="hsl(43 74% 40%)" strokeWidth={1} />
-        <circle cx={150} cy={185} r={16} fill="hsl(215 28% 14%)" stroke="hsl(43 74% 40%)" strokeWidth={1} />
-        {/* Rotating hour hand */}
-        <g transform={`rotate(${rotation}, 150, 150)`}>
-          <line x1={150} y1={150} x2={150} y2={82}
-            stroke="hsl(43 74% 70%)" strokeWidth={3} strokeLinecap="round"
-            filter="url(#heroGlow)" />
+      </g>
+    </svg>
+  );
+}
+
+// ─── TOURBILLON SVG ──────────────────────────────────────────────────────────
+function TourbillonSVG({ angle }: { angle: number }) {
+  const r = 50;
+  return (
+    <svg width={120} height={120} viewBox="-60 -60 120 120">
+      <defs>
+        <radialGradient id="tGrad" cx="50%" cy="50%">
+          <stop offset="0%" stopColor="hsl(43 74% 35%)" />
+          <stop offset="100%" stopColor="hsl(43 74% 15%)" />
+        </radialGradient>
+      </defs>
+      {/* Outer cage */}
+      <circle r={r} fill="url(#tGrad)" stroke="hsl(43 74% 50%)" strokeWidth="1.5" />
+      {/* Rotating cage */}
+      <g transform={`rotate(${angle})`}>
+        {/* Cage spokes */}
+        {[0, 60, 120, 180, 240, 300].map(a => (
+          <line key={a} x1={0} y1={0} x2={r * 0.8 * Math.cos(toRad(a))} y2={r * 0.8 * Math.sin(toRad(a))}
+            stroke="hsl(43 74% 60%)" strokeWidth="1" opacity="0.7" />
+        ))}
+        {/* Cage ring */}
+        <circle r={r * 0.75} fill="none" stroke="hsl(43 74% 50%)" strokeWidth="1" />
+        {/* Balance wheel */}
+        <g transform={`rotate(${angle * 3})`}>
+          <circle r={r * 0.45} fill="none" stroke="hsl(43 74% 70%)" strokeWidth="1.5" />
+          {[0, 90, 180, 270].map(a => (
+            <line key={a} x1={0} y1={0} x2={r * 0.45 * Math.cos(toRad(a))} y2={r * 0.45 * Math.sin(toRad(a))}
+              stroke="hsl(43 74% 65%)" strokeWidth="0.8" />
+          ))}
+          <circle r={4} fill="hsl(43 74% 80%)" />
         </g>
-        {/* Rotating minute hand */}
-        <g transform={`rotate(${rotation * 12 % 360}, 150, 150)`}>
-          <line x1={150} y1={150} x2={150} y2={68}
-            stroke="hsl(0 0% 95%)" strokeWidth={2} strokeLinecap="round" />
+        {/* Escape wheel */}
+        <g transform={`rotate(${-angle * 2})`}>
+          {Array.from({ length: 15 }).map((_, i) => {
+            const a = (i * 360 / 15);
+            const x = r * 0.28 * Math.cos(toRad(a));
+            const y = r * 0.28 * Math.sin(toRad(a));
+            return <line key={i} x1={x * 0.6} y1={y * 0.6} x2={x} y2={y} stroke="hsl(43 74% 75%)" strokeWidth="0.8" />;
+          })}
+          <circle r={r * 0.18} fill="none" stroke="hsl(43 74% 55%)" strokeWidth="0.8" />
         </g>
-        {/* Second hand */}
-        <g transform={`rotate(${rotation * 60 % 360}, 150, 150)`}>
-          <line x1={150} y1={150} x2={150} y2={60}
-            stroke="hsl(0 84% 60%)" strokeWidth={1} strokeLinecap="round" />
-          <circle cx={150} cy={150} r={4} fill="hsl(0 84% 60%)" />
-        </g>
-        {/* Crown */}
-        <rect x={278} y={143} width={14} height={14} rx={3}
-          fill="hsl(43 74% 45%)" stroke="hsl(43 74% 60%)" strokeWidth={1} />
-        {/* Lugs */}
-        <rect x={128} y={22} width={44} height={16} rx={5} fill="hsl(43 50% 35%)" />
-        <rect x={128} y={262} width={44} height={16} rx={5} fill="hsl(43 50% 35%)" />
-      </svg>
+      </g>
+      {/* Center jewel */}
+      <circle r={3} fill="hsl(0 70% 60%)" />
+      <circle r={1.5} fill="hsl(0 90% 80%)" />
+    </svg>
+  );
+}
+
+// ─── WESTMINSTER CHIME VISUALIZER ────────────────────────────────────────────
+function WestminsterChime({ minute, second }: { minute: number; second: number }) {
+  const pattern = [
+    [1,0,0,0], [1,1,0,0], [1,1,1,0], [1,1,1,1],
+    [0,1,1,1], [0,0,1,1], [0,0,0,1], [0,1,0,1],
+    [1,0,1,0], [0,1,0,0], [1,0,0,1], [1,1,0,1],
+    [0,1,1,0], [1,0,1,1], [0,0,1,0], [1,1,1,0],
+  ];
+  const quarter = Math.floor(minute / 15);
+  const activeGongs = pattern[quarter % 16] || [0,0,0,0];
+  const bells = ["E♭", "C", "D", "G"];
+  const beatPhase = (second % 2) < 1;
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex gap-3 justify-center">
+        {bells.map((note, i) => (
+          <div key={i} className="flex flex-col items-center gap-2">
+            <div className="relative w-10 h-16 flex items-end justify-center">
+              {/* Bell shape */}
+              <svg width="40" height="60" viewBox="0 0 40 60">
+                <defs>
+                  <linearGradient id={`bellGrad${i}`} x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor={activeGongs[i] && beatPhase ? "hsl(43 74% 80%)" : "hsl(43 74% 35%)"} />
+                    <stop offset="100%" stopColor={activeGongs[i] && beatPhase ? "hsl(43 74% 55%)" : "hsl(43 74% 20%)"} />
+                  </linearGradient>
+                </defs>
+                <path d="M 20 5 C 10 5 5 15 5 30 L 5 50 L 35 50 L 35 30 C 35 15 30 5 20 5 Z"
+                  fill={`url(#bellGrad${i})`} stroke="hsl(43 74% 50%)" strokeWidth="1" />
+                <ellipse cx={20} cy={50} rx={15} ry={3} fill="hsl(43 74% 30%)" />
+                <circle cx={20} cy={5} r={3} fill="hsl(43 74% 60%)" />
+              </svg>
+              {activeGongs[i] === 1 && beatPhase && (
+                <div className="absolute -inset-2 rounded-full animate-ping"
+                  style={{ background: "hsl(43 74% 50% / 0.3)" }} />
+              )}
+            </div>
+            <span className="text-xs font-bold" style={{ color: activeGongs[i] ? "hsl(43 74% 70%)" : "hsl(43 74% 30%)" }}>{note}</span>
+          </div>
+        ))}
+      </div>
+      <div className="text-center text-xs" style={{ color: "hsl(43 74% 40%)" }}>
+        Quarter {quarter + 1} of 4 — Minute {minute % 15} past quarter
+      </div>
     </div>
   );
 }
 
+// ─── PERPETUAL CALENDAR GRID ─────────────────────────────────────────────────
+function PerpetualCalendarGrid({ date }: { date: Date }) {
+  const year = date.getFullYear(), month = date.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = date.getDate();
+  const cells = Array.from({ length: 42 }, (_, i) => {
+    const d = i - firstDay + 1;
+    return d > 0 && d <= daysInMonth ? d : null;
+  });
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  return (
+    <div>
+      <div className="text-center text-sm font-bold mb-3 tracking-widest uppercase" style={{ color: "hsl(43 74% 60%)" }}>
+        {monthNames[month]} {year}
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center text-xs">
+        {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => (
+          <div key={d} className="font-bold py-1" style={{ color: "hsl(43 74% 45%)" }}>{d}</div>
+        ))}
+        {cells.map((d, i) => (
+          <div key={i} className="py-1 rounded"
+            style={{
+              color: d === today ? "hsl(222 47% 8%)" : d ? "hsl(43 74% 60%)" : "transparent",
+              background: d === today ? "hsl(43 74% 55%)" : "transparent",
+              fontWeight: d === today ? "bold" : "normal",
+            }}>
+            {d || ""}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── EQUATION OF TIME CHART ───────────────────────────────────────────────────
+function EquationOfTimeChart({ currentEoT, dayOfYear }: { currentEoT: number; dayOfYear: number }) {
+  const W = 280, H = 100;
+  const points = Array.from({ length: 365 }, (_, i) => {
+    const d = new Date(new Date().getFullYear(), 0, i + 1);
+    const eot = equationOfTime(d);
+    return eot;
+  });
+  const min = Math.min(...points), max = Math.max(...points);
+  const range = max - min || 1;
+  const pts = points.map((v, i) => `${(i / 364) * W},${H - ((v - min) / range) * (H - 10) - 5}`).join(" ");
+  const curX = (dayOfYear / 364) * W;
+  const curY = H - ((currentEoT - min) / range) * (H - 10) - 5;
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <defs>
+        <linearGradient id="eotFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="hsl(43 74% 50% / 0.3)" />
+          <stop offset="100%" stopColor="hsl(43 74% 50% / 0)" />
+        </linearGradient>
+      </defs>
+      <line x1={0} y1={H/2} x2={W} y2={H/2} stroke="hsl(43 74% 20%)" strokeWidth="1" strokeDasharray="4 4" />
+      <polyline points={pts} fill="none" stroke="hsl(43 74% 50%)" strokeWidth="1.5" />
+      {/* Current position */}
+      <circle cx={curX} cy={curY} r={4} fill="hsl(43 74% 70%)" />
+      <line x1={curX} y1={0} x2={curX} y2={H} stroke="hsl(43 74% 50%)" strokeWidth="0.8" strokeDasharray="3 3" opacity="0.5" />
+      <text x={4} y={12} fill="hsl(43 74% 35%)" fontSize="8">+{max.toFixed(1)}m</text>
+      <text x={4} y={H-2} fill="hsl(43 74% 35%)" fontSize="8">{min.toFixed(1)}m</text>
+    </svg>
+  );
+}
+
+// ─── SEASONAL WHEEL ──────────────────────────────────────────────────────────
+function SeasonalWheel({ date }: { date: Date }) {
+  const dayOfYear = Math.floor((date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000);
+  const totalDays = isLeapYear(date.getFullYear()) ? 366 : 365;
+  const angle = (dayOfYear / totalDays) * 360 - 90;
+  const size = 180;
+  const cx = size/2, cy = size/2, r = 70, rInner = 40;
+  const seasons = [
+    { name: "Spring", color: "hsl(320 50% 40%)", start: 79, end: 172 },
+    { name: "Summer", color: "hsl(43 74% 35%)", start: 172, end: 264 },
+    { name: "Autumn", color: "hsl(25 70% 35%)", start: 264, end: 355 },
+    { name: "Winter", color: "hsl(210 50% 30%)", start: 355, end: 365 + 79 },
+  ];
+  const arcPath = (startDay: number, endDay: number) => {
+    const a1 = toRad((startDay / totalDays) * 360 - 90);
+    const a2 = toRad((endDay / totalDays) * 360 - 90);
+    const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+    const x2 = cx + r * Math.cos(a2), y2 = cy + r * Math.sin(a2);
+    const x3 = cx + rInner * Math.cos(a2), y3 = cy + rInner * Math.sin(a2);
+    const x4 = cx + rInner * Math.cos(a1), y4 = cy + rInner * Math.sin(a1);
+    const large = (endDay - startDay) / totalDays > 0.5 ? 1 : 0;
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${rInner} ${rInner} 0 ${large} 0 ${x4} ${y4} Z`;
+  };
+  const handX = cx + (r + 10) * Math.cos(toRad(angle));
+  const handY = cy + (r + 10) * Math.sin(toRad(angle));
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="mx-auto">
+      {seasons.map(s => {
+        const end = s.end > totalDays ? s.end - totalDays : s.end;
+        return <path key={s.name} d={arcPath(s.start % totalDays, end)} fill={s.color} stroke="hsl(43 74% 20%)" strokeWidth="0.5" />;
+      })}
+      {/* Equinox/solstice markers */}
+      {[79, 172, 264, 355].map((day, i) => {
+        const a = toRad((day / totalDays) * 360 - 90);
+        const labels = ["☀️","🌸","☀️","❄️"];
+        const x = cx + (r + 18) * Math.cos(a);
+        const y = cy + (r + 18) * Math.sin(a);
+        return <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle" fontSize="12">{labels[i]}</text>;
+      })}
+      {/* Position hand */}
+      <line x1={cx} y1={cy} x2={handX} y2={handY} stroke="hsl(43 74% 70%)" strokeWidth="2" strokeLinecap="round" />
+      <circle cx={cx} cy={cy} r={6} fill="hsl(43 74% 55%)" />
+      <circle cx={cx} cy={cy} r={3} fill="hsl(222 47% 6%)" />
+    </svg>
+  );
+}
+
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function WatchShowcase() {
-  const sectionsRef = useRef<HTMLDivElement[]>([]);
-  const [visibleSections, setVisibleSections] = useState<Set<number>>(new Set());
+  const [now, setNow] = useState(new Date());
+  const [tourbillonAngle, setTourbillonAngle] = useState(0);
+  const [location, setLocation] = useState({ lat: 40.7128, lng: -74.006, name: "New York" });
+  const [customLat, setCustomLat] = useState("40.7128");
+  const [customLng, setCustomLng] = useState("-74.006");
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const idx = Number(entry.target.getAttribute("data-idx"));
-            setVisibleSections(prev => new Set([...prev, idx]));
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-    sectionsRef.current.forEach(el => el && observer.observe(el));
-    return () => observer.disconnect();
+    const timer = setInterval(() => {
+      setNow(new Date());
+      setTourbillonAngle(a => (a + 6) % 360); // 60rpm = 6°/tick at 1s
+    }, 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  const setRef = (idx: number) => (el: HTMLDivElement | null) => {
-    if (el) sectionsRef.current[idx] = el;
-  };
+  // Use browser geolocation
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, name: "Your Location" });
+        setCustomLat(pos.coords.latitude.toFixed(4));
+        setCustomLng(pos.coords.longitude.toFixed(4));
+      });
+    }
+  }, []);
 
-  const sectionStyle = (idx: number) => ({
-    opacity: visibleSections.has(idx) ? 1 : 0,
-    transform: visibleSections.has(idx) ? "translateY(0)" : "translateY(30px)",
-    transition: "opacity 0.7s ease, transform 0.7s ease",
-  });
+  // ─ Computed values ─
+  const moon = moonPhase(now);
+  const eot = equationOfTime(now);
+  const sid = siderealTime(now, location.lng);
+  const sun = sunPosition(now);
+  const { sunrise, sunset, daylength } = getSunriseSunset(now, location.lat, location.lng);
+  const season = getSeason(now);
+  const chinese = getChineseLunisolar(now);
+  const zodiac = getZodiac(now);
+  const leap = getLeapYearInfo(now.getFullYear());
+  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
+
+  const fmt = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const fmtNum = (n: number, d = 2) => n.toFixed(d);
+  const pad = (n: number) => n.toString().padStart(2, "0");
+
+  const sidH = Math.floor(sid / 15);
+  const sidM = Math.floor((sid % 15) * 4);
+  const sidS = Math.floor(((sid % 15) * 4 % 1) * 60);
+
+  const solarTime = new Date(now.getTime() + eot * 60000 + (location.lng / 15) * 3600000 - now.getTimezoneOffset() * 60000);
+
+  // Chinese zodiac animals
+  const chineseAnimals = ["🐀","🐂","🐅","🐇","🐉","🐍","🐎","🐐","🐒","🐓","🐕","🐖"];
+  const animalEmojis: Record<string,string> = { Rat:"🐀",Ox:"🐂",Tiger:"🐅",Rabbit:"🐇",Dragon:"🐉",Snake:"🐍",Horse:"🐎",Goat:"🐐",Monkey:"🐒",Rooster:"🐓",Dog:"🐕",Pig:"🐖" };
 
   return (
-    <Layout showFab={false}>
-      <div style={{ background: "hsl(220 25% 7%)", minHeight: "100vh", color: "hsl(210 20% 90%)" }}>
-
-        {/* HERO */}
-        <section className="relative flex flex-col items-center justify-center text-center px-4 py-20 overflow-hidden min-h-screen">
-          {/* Background texture */}
-          <div className="absolute inset-0 opacity-10"
-            style={{ backgroundImage: "radial-gradient(circle at 1px 1px, hsl(43 74% 49%) 1px, transparent 0)", backgroundSize: "30px 30px" }} />
-          {/* Gold vignette */}
-          <div className="absolute inset-0"
-            style={{ background: "radial-gradient(ellipse at center, hsl(43 74% 20% / 0.15) 0%, transparent 70%)" }} />
-
-          <div className="relative z-10 flex flex-col items-center gap-8">
-            <p className="text-xs uppercase tracking-[0.4em]" style={{ color: GOLD_LIGHT }}>
-              Vacheron Constantin · Les Cabinotiers
-            </p>
-            <WatchHero />
-            <div>
-              <h1 className="text-3xl sm:text-5xl font-bold leading-tight mb-4 max-w-3xl"
-                style={{ background: `linear-gradient(135deg, ${GOLD}, hsl(43 74% 80%), ${GOLD})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                The Berkley Grand Complication
-              </h1>
-              <p className="text-base sm:text-lg max-w-xl mx-auto" style={{ color: "hsl(210 20% 65%)" }}>
-                The most complicated mechanical watch ever created by human hands.
-              </p>
+    <Layout>
+      <div className="min-h-screen pb-20" style={{ background: "hsl(222 47% 5%)", color: "hsl(43 30% 80%)" }}>
+        {/* Header */}
+        <div className="sticky top-0 z-10 px-4 py-3 flex items-center justify-between"
+          style={{ background: "hsl(222 47% 5% / 0.95)", borderBottom: "1px solid hsl(43 74% 20%)", backdropFilter: "blur(10px)" }}>
+          <div>
+            <div className="text-xs tracking-widest uppercase" style={{ color: "hsl(43 74% 40%)" }}>Grand Complication</div>
+            <div className="text-lg font-bold tracking-wide" style={{ color: "hsl(43 74% 60%)" }}>Astronomical Dashboard</div>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-mono font-bold tabular-nums" style={{ color: "hsl(43 74% 70%)" }}>
+              {pad(now.getHours())}:{pad(now.getMinutes())}:{pad(now.getSeconds())}
             </div>
-            <div className="flex items-center gap-2 mt-2">
-              <div className="h-px w-12" style={{ background: GOLD }} />
-              <span className="text-xs tracking-widest uppercase" style={{ color: GOLD_LIGHT }}>Geneva · 2015</span>
-              <div className="h-px w-12" style={{ background: GOLD }} />
+            <div className="text-xs" style={{ color: "hsl(43 74% 40%)" }}>{now.toLocaleDateString(undefined, { weekday:"long", year:"numeric", month:"long", day:"numeric" })}</div>
+          </div>
+        </div>
+
+        <div className="px-4 py-6 space-y-8 max-w-4xl mx-auto">
+
+          {/* LOCATION */}
+          <div className="flex flex-wrap gap-2 items-center text-xs" style={{ color: "hsl(43 74% 40%)" }}>
+            <span>📍 {location.name}</span>
+            <span>Lat {fmtNum(location.lat, 4)}°</span>
+            <span>Lng {fmtNum(location.lng, 4)}°</span>
+            <span className="ml-auto">Day {dayOfYear} of {isLeapYear(now.getFullYear()) ? 366 : 365}</span>
+          </div>
+
+          {/* ── SECTION 1: MOON PHASE ── */}
+          <section>
+            <SectionTitle sub="Live lunar calculation">Moon Phase</SectionTitle>
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="flex-shrink-0">
+                <MoonPhaseSVG phase={moon.phase} illumination={moon.illumination} />
+              </div>
+              <div className="grid grid-cols-2 gap-3 flex-1 w-full">
+                <DataCard title="Phase" value={moon.name} icon="🌙" />
+                <DataCard title="Illumination" value={`${(moon.illumination * 100).toFixed(1)}%`} icon="✨" />
+                <DataCard title="Lunar Age" value={`${moon.age.toFixed(2)} days`} icon="📅" />
+                <DataCard title="Synodic Month" value="29.53 days" icon="🔄" />
+              </div>
             </div>
-          </div>
-          {/* Scroll hint */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-50">
-            <span className="text-xs" style={{ color: GOLD_LIGHT }}>Explore</span>
-            <ChevronDown className="h-4 w-4 animate-bounce" style={{ color: GOLD_LIGHT }} />
-          </div>
-        </section>
+            {/* Moon phase strip */}
+            <div className="mt-4 flex justify-between text-center text-xs" style={{ color: "hsl(43 74% 35%)" }}>
+              {["🌑","🌒","🌓","🌔","🌕","🌖","🌗","🌘"].map((emoji, i) => {
+                const isActive = Math.floor(moon.phase * 8) === i;
+                return (
+                  <div key={i} className="flex flex-col items-center gap-1">
+                    <span className="text-xl" style={{ opacity: isActive ? 1 : 0.35 }}>{emoji}</span>
+                    {isActive && <div className="w-1 h-1 rounded-full mx-auto" style={{ background: "hsl(43 74% 55%)" }} />}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
 
-        {/* QUICK FACTS */}
-        <section ref={setRef(0)} data-idx={0} style={sectionStyle(0)} className="px-4 py-16 max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-xs uppercase tracking-widest mb-2" style={{ color: GOLD_LIGHT }}>At a Glance</p>
-            <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: GOLD }}>Key Specifications</h2>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {quickFacts.map((fact, i) => (
-              <div key={i} className="rounded-2xl p-5 text-center border transition-all duration-300 hover:scale-105"
-                style={{
-                  background: "hsl(215 28% 12% / 0.8)",
-                  borderColor: "hsl(43 74% 30%)",
-                  backdropFilter: "blur(20px)",
-                  boxShadow: "0 4px 24px hsl(43 74% 20% / 0.3)"
-                }}>
-                <div className="text-2xl mb-2">{fact.icon}</div>
-                <div className="text-xl font-bold mb-1" style={{ color: GOLD }}>{fact.value}</div>
-                <div className="text-xs" style={{ color: "hsl(215 16% 55%)" }}>{fact.label}</div>
+          {/* ── SECTION 2: GREGORIAN PERPETUAL CALENDAR ── */}
+          <section>
+            <SectionTitle sub="Self-correcting mechanical calendar">Gregorian Perpetual Calendar</SectionTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-xl p-4 border" style={{ background: "hsl(222 47% 6%)", borderColor: "hsl(43 74% 25%)" }}>
+                <PerpetualCalendarGrid date={now} />
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* DIAL EXPLORER */}
-        <section ref={setRef(1)} data-idx={1} style={sectionStyle(1)} className="px-4 py-16 max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-xs uppercase tracking-widest mb-2" style={{ color: GOLD_LIGHT }}>Interactive</p>
-            <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: GOLD }}>Dial Explorer</h2>
-            <p className="text-sm max-w-xl mx-auto" style={{ color: "hsl(210 20% 60%)" }}>
-              Tap the golden hotspots on each dial to reveal the secrets of each complication.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-12">
-            <WatchDialSVG features={dialFeatures} label="Front Dial" />
-            <WatchDialSVG features={backDialFeatures} label="Back Dial" />
-          </div>
-        </section>
-
-        {/* COMPLICATION SHOWCASE */}
-        <section ref={setRef(2)} data-idx={2} style={sectionStyle(2)} className="px-4 py-16 max-w-3xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-xs uppercase tracking-widest mb-2" style={{ color: GOLD_LIGHT }}>63 Complications</p>
-            <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: GOLD }}>Complication Showcase</h2>
-          </div>
-          <div className="space-y-4">
-            {complicationGroups.map((group, i) => (
-              <ComplicationGroup key={i} group={group} index={i} />
-            ))}
-          </div>
-        </section>
-
-        {/* MICRO-MECHANICS */}
-        <section ref={setRef(3)} data-idx={3} style={sectionStyle(3)} className="px-4 py-16 max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-xs uppercase tracking-widest mb-2" style={{ color: GOLD_LIGHT }}>Engineering</p>
-            <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: GOLD }}>Micro-Mechanics</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {[
-              { icon: "⚙️", title: "2,877 Components", desc: "Each gear, spring, jewel and lever is crafted to tolerances measured in microns — smaller than a human hair." },
-              { icon: "🔬", title: "Hand-Finished Bridges", desc: "Every bridge and plate receives hours of hand-finishing: anglage, circular graining, polished slots, and chamfered edges." },
-              { icon: "💎", title: "Sapphire Crystals", desc: "Anti-reflective sapphire crystals on both sides provide a window into the mechanical universe within, rated for scratch resistance." },
-              { icon: "🏛️", title: "Engraved Plates", desc: "The movement plates feature hand-engraved floral motifs by Vacheron's master engravers — an art form taught over decades." },
-              { icon: "🔩", title: "Gold Screws", desc: "18-karat gold screws with mirror-polished heads and blued steel screws provide contrast and precision throughout the movement." },
-              { icon: "📐", title: "Multi-Layer Architecture", desc: "The movement's three-dimensional architecture stacks complications in multiple layers, requiring custom bridge geometry on each level." },
-            ].map((item, i) => (
-              <div key={i} className="rounded-2xl p-6 border transition-all duration-300 hover:border-amber-500/50 hover:-translate-y-1"
-                style={{ background: "hsl(215 28% 12% / 0.8)", borderColor: "hsl(43 74% 25%)", backdropFilter: "blur(20px)" }}>
-                <div className="text-3xl mb-3">{item.icon}</div>
-                <h3 className="font-semibold text-sm mb-2" style={{ color: GOLD }}>{item.title}</h3>
-                <p className="text-xs leading-relaxed" style={{ color: "hsl(210 20% 62%)" }}>{item.desc}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <DataCard title="Day of Week" value={now.toLocaleDateString(undefined, { weekday:"long" })} />
+                <DataCard title="Day of Year" value={`#${dayOfYear}`} />
+                <DataCard title="Week of Year" value={`W${Math.ceil(dayOfYear / 7)}`} />
+                <DataCard title="Year" value={now.getFullYear().toString()} accent={isLeapYear(now.getFullYear()) ? "hsl(43 74% 80%)" : undefined} />
+                <DataCard title="Leap Year" value={isLeapYear(now.getFullYear()) ? "✓ Yes" : "No"} sub={`Next: ${leap.next}`} />
+                <DataCard title="Days Remaining" value={`${(isLeapYear(now.getFullYear()) ? 366 : 365) - dayOfYear} days`} />
               </div>
-            ))}
-          </div>
-        </section>
+            </div>
+          </section>
 
-        {/* CRAFTSMANSHIP */}
-        <section ref={setRef(4)} data-idx={4} style={sectionStyle(4)} className="px-4 py-16 max-w-4xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-xs uppercase tracking-widest mb-2" style={{ color: GOLD_LIGHT }}>The Atelier</p>
-            <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: GOLD }}>Craftsmanship Story</h2>
-          </div>
-          <div className="space-y-6">
-            {craftSteps.map((step, i) => (
-              <div key={i} className="flex gap-5 items-start p-5 rounded-2xl border"
-                style={{ background: "hsl(215 28% 11% / 0.7)", borderColor: "hsl(43 74% 20%)", backdropFilter: "blur(10px)" }}>
-                <div className="text-2xl font-bold shrink-0 w-10 text-right" style={{ color: "hsl(43 74% 35%)" }}>{step.step}</div>
-                <div className="h-8 w-px shrink-0 mt-0.5" style={{ background: "hsl(43 74% 30%)" }} />
-                <div>
-                  <h3 className="font-semibold text-sm mb-1" style={{ color: GOLD }}>{step.title}</h3>
-                  <p className="text-xs leading-relaxed" style={{ color: "hsl(210 20% 62%)" }}>{step.desc}</p>
+          {/* ── SECTION 3: CHINESE LUNISOLAR ── */}
+          <section>
+            <SectionTitle sub="Traditional Chinese calendar with zodiac animals">Chinese Lunisolar Calendar</SectionTitle>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+              <DataCard title="Chinese Year" value={chinese.year.toString()} icon="🏮" />
+              <DataCard title="Zodiac Animal" value={`${animalEmojis[chinese.animal] || "🐲"} ${chinese.animal}`} />
+              <DataCard title="Element" value={chinese.element} icon="☯️" />
+              <DataCard title="Lunar Month" value={chinese.monthName} sub={`Day ${chinese.dayNum}`} />
+            </div>
+            {/* 12 Animals grid */}
+            <div className="rounded-xl border p-4" style={{ background: "hsl(222 47% 6%)", borderColor: "hsl(43 74% 25%)" }}>
+              <div className="text-xs mb-3 tracking-widest uppercase" style={{ color: "hsl(43 74% 40%)" }}>12-Year Zodiac Cycle</div>
+              <div className="grid grid-cols-6 sm:grid-cols-12 gap-2">
+                {["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"].map((animal, i) => {
+                  const isActive = animal === chinese.animal;
+                  return (
+                    <div key={animal} className="flex flex-col items-center gap-1 p-1 rounded"
+                      style={{ background: isActive ? "hsl(43 74% 20%)" : "transparent", border: isActive ? "1px solid hsl(43 74% 40%)" : "1px solid transparent" }}>
+                      <span className="text-lg">{chineseAnimals[i]}</span>
+                      <span className="text-xs hidden sm:block" style={{ color: isActive ? "hsl(43 74% 70%)" : "hsl(43 74% 35%)" }}>{animal}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Leap cycles */}
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              <DataCard title="Leap Cycle" value="19 years" sub="Metonic cycle" icon="🔄" />
+              <DataCard title="Lunar Months" value="354/355" sub="Days per lunar year" icon="📆" />
+              <DataCard title="Intercalation" value={`~7/19 years`} sub="Leap months added" icon="➕" />
+            </div>
+          </section>
+
+          {/* ── SECTION 4: ZODIAC ── */}
+          <section>
+            <SectionTitle sub="Western astronomical zodiac">Zodiac Display</SectionTitle>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="rounded-xl border p-6 flex flex-col items-center justify-center flex-shrink-0"
+                style={{ background: "hsl(222 47% 6%)", borderColor: "hsl(43 74% 25%)", minWidth: 150 }}>
+                <div className="text-6xl mb-2">{zodiac.symbol}</div>
+                <div className="text-lg font-bold" style={{ color: "hsl(43 74% 65%)" }}>{zodiac.sign}</div>
+                <div className="text-xs mt-1" style={{ color: "hsl(43 74% 35%)" }}>{zodiac.element}</div>
+                <div className="text-xs mt-1" style={{ color: "hsl(43 74% 35%)" }}>From {zodiac.startDate}</div>
+              </div>
+              <div className="flex-1">
+                <div className="grid grid-cols-6 gap-1.5">
+                  {["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"].map((sym, i) => {
+                    const signs = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+                    const isActive = signs[i] === zodiac.sign;
+                    return (
+                      <div key={i} className="rounded-lg p-2 text-center transition-all"
+                        style={{ background: isActive ? "hsl(43 74% 20%)" : "hsl(222 47% 8%)", border: `1px solid ${isActive ? "hsl(43 74% 45%)" : "hsl(43 74% 15%)"}` }}>
+                        <div className="text-xl" style={{ color: isActive ? "hsl(43 74% 70%)" : "hsl(43 74% 35%)" }}>{sym}</div>
+                        <div className="text-xs mt-0.5 hidden sm:block" style={{ color: isActive ? "hsl(43 74% 55%)" : "hsl(43 74% 25%)" }}>{signs[i]}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* COMPARISON */}
-        <section ref={setRef(5)} data-idx={5} style={sectionStyle(5)} className="px-4 py-16 max-w-4xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-xs uppercase tracking-widest mb-2" style={{ color: GOLD_LIGHT }}>Historical Context</p>
-            <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: GOLD }}>World's Most Complicated Watches</h2>
-          </div>
-          <div className="rounded-2xl overflow-hidden border" style={{ borderColor: "hsl(43 74% 25%)" }}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ background: "hsl(215 28% 15%)" }}>
-                  <th className="text-left p-4 font-semibold text-xs uppercase tracking-wider" style={{ color: GOLD_LIGHT }}>Watch</th>
-                  <th className="text-center p-4 font-semibold text-xs uppercase tracking-wider" style={{ color: GOLD_LIGHT }}>Year</th>
-                  <th className="text-center p-4 font-semibold text-xs uppercase tracking-wider" style={{ color: GOLD_LIGHT }}>Complications</th>
-                  <th className="hidden sm:table-cell text-left p-4 font-semibold text-xs uppercase tracking-wider" style={{ color: GOLD_LIGHT }}>Note</th>
-                </tr>
-              </thead>
-              <tbody>
-                {comparisonWatches.map((w, i) => (
-                  <tr key={i} style={{
-                    background: w.complications === 63 ? "hsl(43 74% 15% / 0.4)" : i % 2 === 0 ? "hsl(215 28% 12%)" : "hsl(215 28% 10%)",
-                    borderTop: "1px solid hsl(43 74% 15%)"
-                  }}>
-                    <td className="p-4 font-medium text-sm" style={{ color: w.complications === 63 ? GOLD : "hsl(210 20% 80%)" }}>{w.name}</td>
-                    <td className="p-4 text-center text-sm" style={{ color: "hsl(215 16% 60%)" }}>{w.year}</td>
-                    <td className="p-4 text-center">
-                      <span className="px-3 py-1 rounded-full text-xs font-bold"
-                        style={{
-                          background: w.complications === 63 ? "hsl(43 74% 25%)" : "hsl(215 28% 20%)",
-                          color: w.complications === 63 ? GOLD : "hsl(215 16% 60%)"
-                        }}>
-                        {w.complications}
-                      </span>
-                    </td>
-                    <td className="hidden sm:table-cell p-4 text-xs" style={{ color: w.complications === 63 ? "hsl(43 74% 70%)" : "hsl(215 16% 55%)" }}>{w.note}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* GALLERY */}
-        <section ref={setRef(6)} data-idx={6} style={sectionStyle(6)} className="px-4 py-16 max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-xs uppercase tracking-widest mb-2" style={{ color: GOLD_LIGHT }}>Visual Gallery</p>
-            <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: GOLD }}>A Study in Detail</h2>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { label: "Movement", emoji: "⚙️", bg: "from-zinc-900 to-zinc-800" },
-              { label: "Dial Engraving", emoji: "🏛️", bg: "from-amber-950 to-amber-900" },
-              { label: "Gold Case", emoji: "💛", bg: "from-yellow-950 to-yellow-900" },
-              { label: "Mechanical Layers", emoji: "🔬", bg: "from-slate-900 to-slate-800" },
-              { label: "Tourbillon Cage", emoji: "🌀", bg: "from-indigo-950 to-indigo-900" },
-              { label: "Repeater Gongs", emoji: "🔔", bg: "from-orange-950 to-orange-900" },
-              { label: "Sapphire Crystal", emoji: "💎", bg: "from-blue-950 to-blue-900" },
-              { label: "Crown Detail", emoji: "👑", bg: "from-rose-950 to-rose-900" },
-            ].map((item, i) => (
-              <div key={i}
-                className={`aspect-square rounded-2xl bg-gradient-to-br ${item.bg} border flex flex-col items-center justify-center gap-2 transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer`}
-                style={{ borderColor: "hsl(43 74% 25%)", boxShadow: "0 4px 20px hsl(0 0% 0% / 0.4)" }}>
-                <div className="text-4xl">{item.emoji}</div>
-                <p className="text-xs font-medium text-center px-2" style={{ color: "hsl(43 74% 60%)" }}>{item.label}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* LEGACY */}
-        <section ref={setRef(7)} data-idx={7} style={sectionStyle(7)} className="px-4 py-16 max-w-3xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-xs uppercase tracking-widest mb-2" style={{ color: GOLD_LIGHT }}>Since 1755</p>
-            <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: GOLD }}>The Legacy of Vacheron Constantin</h2>
-          </div>
-          <div className="rounded-2xl border p-8 text-center"
-            style={{ background: "hsl(215 28% 11% / 0.8)", borderColor: "hsl(43 74% 25%)", backdropFilter: "blur(20px)" }}>
-            <p className="text-sm leading-relaxed mb-6" style={{ color: "hsl(210 20% 70%)" }}>
-              Founded in Geneva in 1755, Vacheron Constantin is the world's oldest watch manufacturer in continuous operation. 
-              For nearly three centuries, the Maison has upheld an unbroken tradition of horological excellence, attracting 
-              kings, emperors, and collectors.
-            </p>
-            <p className="text-sm leading-relaxed mb-6" style={{ color: "hsl(210 20% 70%)" }}>
-              The <span style={{ color: GOLD }}>Les Cabinotiers</span> division — named after the 18th-century watchmakers who 
-              worked in elevated workshops to capture natural light — creates exclusively bespoke timepieces. Each watch is 
-              a singular commission, developed in close collaboration with the collector over years.
-            </p>
-            <p className="text-sm leading-relaxed" style={{ color: "hsl(210 20% 70%)" }}>
-              The Berkley Grand Complication represents the summit of this tradition — eight years of work, 
-              three master watchmakers, and a singular vision: to push human achievement in mechanical watchmaking 
-              beyond all previous limits.
-            </p>
-          </div>
-        </section>
-
-        {/* FINAL */}
-        <section ref={setRef(8)} data-idx={8} style={sectionStyle(8)} className="px-4 py-24 text-center relative overflow-hidden">
-          <div className="absolute inset-0"
-            style={{ background: "radial-gradient(ellipse at center, hsl(43 74% 15% / 0.2) 0%, transparent 70%)" }} />
-          <div className="relative z-10 max-w-2xl mx-auto">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-px flex-1 max-w-8" style={{ background: GOLD }} />
-              ))}
-              <span className="text-2xl">✦</span>
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-px flex-1 max-w-8" style={{ background: GOLD }} />
-              ))}
             </div>
-            <h2 className="text-2xl sm:text-4xl font-bold italic leading-tight"
-              style={{ background: `linear-gradient(135deg, ${GOLD}, hsl(43 74% 85%), ${GOLD})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+            {/* Sun in zodiac */}
+            <div className="mt-3">
+              <DataCard title="Sun's Current Position" value={`${fmtNum(sun.declination, 2)}° Declination`}
+                sub={`Right Ascension: ${fmtNum(sun.rightAscension, 2)}°`} icon="☀️" />
+            </div>
+          </section>
+
+          {/* ── SECTION 5: SUNRISE/SUNSET ── */}
+          <section>
+            <SectionTitle sub="Calculated for your location">Sunrise & Sunset</SectionTitle>
+            <div className="rounded-xl border p-4 mb-3" style={{ background: "hsl(222 47% 6%)", borderColor: "hsl(43 74% 25%)" }}>
+              {/* Sun arc visualization */}
+              <svg width="100%" height="100" viewBox="0 0 300 100" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  <linearGradient id="skyDay" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(200 60% 20%)" />
+                    <stop offset="100%" stopColor="hsl(222 47% 8%)" />
+                  </linearGradient>
+                </defs>
+                <rect width="300" height="100" fill="url(#skyDay)" />
+                {/* Horizon */}
+                <line x1={0} y1={80} x2={300} y2={80} stroke="hsl(43 74% 30%)" strokeWidth="1" />
+                {/* Sun arc path */}
+                <path d="M 20 80 Q 150 10 280 80" fill="none" stroke="hsl(43 74% 40%)" strokeWidth="1" strokeDasharray="4 3" />
+                {/* Current sun position */}
+                {(() => {
+                  const totalMins = (sunset.getTime() - sunrise.getTime()) / 60000;
+                  const elapsedMins = (now.getTime() - sunrise.getTime()) / 60000;
+                  const t = Math.max(0, Math.min(1, elapsedMins / totalMins));
+                  const x = 20 + t * 260;
+                  const arc = -80 * Math.sin(t * Math.PI);
+                  const y = 80 + arc;
+                  const isDay = t >= 0 && t <= 1;
+                  return isDay ? (
+                    <g>
+                      <circle cx={x} cy={y} r={10} fill="hsl(43 74% 55%)" opacity="0.3" />
+                      <circle cx={x} cy={y} r={7} fill="hsl(43 74% 70%)" />
+                      <circle cx={x} cy={y} r={3} fill="hsl(43 74% 95%)" />
+                    </g>
+                  ) : null;
+                })()}
+                {/* Labels */}
+                <text x={20} y={95} fill="hsl(43 74% 50%)" fontSize="9" textAnchor="middle">🌅 {fmt(sunrise)}</text>
+                <text x={280} y={95} fill="hsl(200 50% 60%)" fontSize="9" textAnchor="middle">🌇 {fmt(sunset)}</text>
+                <text x={150} y={18} fill="hsl(43 74% 55%)" fontSize="9" textAnchor="middle">Altitude: {fmtNum(sun.altitude, 1)}°</text>
+              </svg>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <DataCard title="Sunrise" value={fmt(sunrise)} icon="🌅" />
+              <DataCard title="Sunset" value={fmt(sunset)} icon="🌇" />
+              <DataCard title="Day Length" value={`${fmtNum(daylength, 2)}h`} icon="⏱️" />
+              <DataCard title="Solar Altitude" value={`${fmtNum(sun.altitude, 2)}°`}
+                accent={sun.altitude > 0 ? "hsl(43 74% 70%)" : "hsl(200 60% 60%)"} />
+            </div>
+          </section>
+
+          {/* ── SECTION 6: EQUATION OF TIME ── */}
+          <section>
+            <SectionTitle sub="Difference between civil & apparent solar time">Equation of Time</SectionTitle>
+            <div className="rounded-xl border p-4 mb-3" style={{ background: "hsl(222 47% 6%)", borderColor: "hsl(43 74% 25%)" }}>
+              <EquationOfTimeChart currentEoT={eot} dayOfYear={dayOfYear} />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <DataCard title="EoT Value" value={`${eot >= 0 ? "+" : ""}${fmtNum(eot, 2)} min`}
+                sub="Clock ahead of Sun" icon="⏰" accent={eot > 0 ? "hsl(43 74% 70%)" : "hsl(200 60% 70%)"} />
+              <DataCard title="Apparent Solar Time" value={solarTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} icon="☀️" />
+              <DataCard title="Civil Time" value={now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} icon="🕐" />
+            </div>
+          </section>
+
+          {/* ── SECTION 7: SIDEREAL TIME ── */}
+          <section>
+            <SectionTitle sub="Star time — Earth's rotation relative to distant stars">Sidereal Time</SectionTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-xl border p-4" style={{ background: "hsl(222 47% 6%)", borderColor: "hsl(43 74% 25%)" }}>
+                <div className="text-xs mb-2 uppercase tracking-widest" style={{ color: "hsl(43 74% 40%)" }}>Local Sidereal Time</div>
+                <div className="text-4xl font-mono font-bold tabular-nums" style={{ color: "hsl(43 74% 70%)" }}>
+                  {pad(sidH)}h {pad(sidM)}m {pad(sidS)}s
+                </div>
+                <div className="text-xs mt-2" style={{ color: "hsl(43 74% 35%)" }}>= {fmtNum(sid, 4)}°</div>
+                <div className="text-xs mt-1" style={{ color: "hsl(43 74% 35%)" }}>
+                  Sidereal day = 23h 56m 4.09s<br />
+                  {fmtNum((23 * 3600 + 56 * 60 + 4.09 - (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds())) / 60, 0)} minutes until next sidereal noon
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <DataCard title="GMST" value={`${fmtNum(siderealTime(now, 0), 2)}°`} sub="Greenwich MST" />
+                <DataCard title="LMST" value={`${fmtNum(sid, 2)}°`} sub="Local MST" />
+                <DataCard title="Solar vs Sidereal" value="+3m 56s/day" sub="Sidereal day shorter" />
+                <DataCard title="RA on Meridian" value={`${pad(sidH)}h ${pad(sidM)}m`} sub="Right Ascension" />
+              </div>
+            </div>
+          </section>
+
+          {/* ── SECTION 8: STAR CHART / SKY CHART ── */}
+          <section>
+            <SectionTitle sub="Live star positions based on sidereal time">Star Chart & Sky Map</SectionTitle>
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <div className="rounded-xl border p-3 flex-shrink-0" style={{ background: "hsl(222 47% 6%)", borderColor: "hsl(43 74% 25%)" }}>
+                <StarChartSVG siderealDeg={sid} />
+                <div className="text-center text-xs mt-2" style={{ color: "hsl(43 74% 35%)" }}>Rotating with sidereal time</div>
+              </div>
+              <div className="flex-1 space-y-3">
+                <div className="text-xs uppercase tracking-widest mb-2" style={{ color: "hsl(43 74% 40%)" }}>Brightest Stars Now</div>
+                {STARS.slice(0, 8).map(star => {
+                  const raAdj = ((star.ra - sid) % 360 + 360) % 360;
+                  const isVisible = star.dec + 90 > (90 - location.lat);
+                  return (
+                    <div key={star.name} className="flex items-center justify-between text-xs py-1 border-b"
+                      style={{ borderColor: "hsl(43 74% 12%)" }}>
+                      <span style={{ color: "hsl(43 74% 60%)" }}>★ {star.name}</span>
+                      <span style={{ color: "hsl(43 74% 35%)" }}>Mag {star.mag.toFixed(2)}</span>
+                      <span style={{ color: "hsl(43 74% 35%)" }}>RA {star.ra.toFixed(1)}°</span>
+                      <span style={{ color: isVisible ? "hsl(120 50% 50%)" : "hsl(0 50% 50%)" }}>
+                        {isVisible ? "Visible" : "Below horizon"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          {/* ── SECTION 9: SEASONS & SOLSTICES ── */}
+          <section>
+            <SectionTitle sub="Earth's orbital position and astronomical seasons">Seasons & Equinoxes</SectionTitle>
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              <SeasonalWheel date={now} />
+              <div className="flex-1 grid grid-cols-2 gap-3">
+                <DataCard title="Current Season" value={season.name} icon={season.icon} accent={season.color} />
+                <DataCard title="Season Progress" value={`${(season.progress * 100).toFixed(1)}%`} />
+                <DataCard title="Spring Equinox" value="~Mar 20" sub={`${now.getFullYear()}`} icon="🌸" />
+                <DataCard title="Summer Solstice" value="~Jun 21" sub="Longest day" icon="☀️" />
+                <DataCard title="Autumn Equinox" value="~Sep 23" sub={`${now.getFullYear()}`} icon="🍂" />
+                <DataCard title="Winter Solstice" value="~Dec 21" sub="Shortest day" icon="❄️" />
+              </div>
+            </div>
+            {/* Declination bar */}
+            <div className="mt-4 rounded-xl border p-4" style={{ background: "hsl(222 47% 6%)", borderColor: "hsl(43 74% 25%)" }}>
+              <div className="text-xs mb-2 uppercase tracking-widest" style={{ color: "hsl(43 74% 40%)" }}>Solar Declination (−23.5° to +23.5°)</div>
+              <div className="relative h-6 rounded-full overflow-hidden" style={{ background: "hsl(222 47% 10%)" }}>
+                <div className="absolute inset-y-0 left-1/2 w-px" style={{ background: "hsl(43 74% 30%)" }} />
+                <div className="absolute inset-y-0 w-2 h-2 my-auto rounded-full -translate-x-1"
+                  style={{ background: "hsl(43 74% 70%)", left: `${((sun.declination + 23.5) / 47) * 100}%`, top: "50%", transform: "translateX(-50%) translateY(-50%)" }} />
+              </div>
+              <div className="flex justify-between text-xs mt-1" style={{ color: "hsl(43 74% 35%)" }}>
+                <span>−23.5° (Winter Solstice)</span>
+                <span className="font-bold" style={{ color: "hsl(43 74% 55%)" }}>{fmtNum(sun.declination, 2)}°</span>
+                <span>+23.5° (Summer Solstice)</span>
+              </div>
+            </div>
+          </section>
+
+          {/* ── SECTION 10: TOURBILLON ── */}
+          <section>
+            <SectionTitle sub="60 rpm precision regulating mechanism">Tourbillon Regulator</SectionTitle>
+            <div className="flex flex-col sm:flex-row gap-6 items-center">
+              <div className="flex flex-col items-center gap-3">
+                <TourbillonSVG angle={tourbillonAngle} />
+                <div className="text-xs text-center" style={{ color: "hsl(43 74% 40%)" }}>
+                  Live animation • 60 rpm<br />
+                  Compensating for gravity
+                </div>
+              </div>
+              <div className="flex-1 grid grid-cols-2 gap-3">
+                <DataCard title="Rotation Speed" value="60 rpm" sub="1 revolution/second" icon="⚙️" />
+                <DataCard title="Beat Rate" value="21,600 vph" sub="3 Hz" icon="💓" />
+                <DataCard title="Cage Weight" value="~0.3g" sub="Featherlight" icon="⚖️" />
+                <DataCard title="Escapement" value="Swiss Lever" sub="Traditional" icon="🔧" />
+                <DataCard title="Power Reserve" value="~65 hours" sub="Hand-wound" icon="🔋" />
+                <DataCard title="Pivot Count" value="72" sub="Pivot points in cage" icon="🔩" />
+              </div>
+            </div>
+          </section>
+
+          {/* ── SECTION 11: WESTMINSTER REPEATER ── */}
+          <section>
+            <SectionTitle sub="4-gong chiming mechanism — strikes hours, quarters, minutes">Westminster Minute Repeater</SectionTitle>
+            <div className="rounded-xl border p-6" style={{ background: "hsl(222 47% 6%)", borderColor: "hsl(43 74% 25%)" }}>
+              <WestminsterChime minute={now.getMinutes()} second={now.getSeconds()} />
+              <GoldDivider />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+                <DataCard title="Current Hour" value={`${pad(now.getHours() % 12 || 12)}h`} icon="🔔" />
+                <DataCard title="Quarter" value={`Q${Math.floor(now.getMinutes() / 15) + 1}`} sub="of 4 per hour" />
+                <DataCard title="Minutes Past" value={`${now.getMinutes() % 15}m`} sub="After quarter" />
+                <DataCard title="Chime Sequence" value="E♭-C-D-G" sub="Westminster pattern" />
+              </div>
+              <div className="mt-4 text-xs" style={{ color: "hsl(43 74% 35%)" }}>
+                <p>The Westminster chime sequence uses 4 notes: E♭, C, D, G. Each quarter hour plays a different combination of these notes, building up to the full 16-note sequence at the top of the hour, followed by the hour strike on the low-G gong.</p>
+              </div>
+            </div>
+          </section>
+
+          {/* ── SECTION 12: SOLAR TIME ── */}
+          <section>
+            <SectionTitle sub="Apparent vs mean solar time">Solar Time vs Civil Time</SectionTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-xl border p-4" style={{ background: "hsl(222 47% 6%)", borderColor: "hsl(43 74% 25%)" }}>
+                <div className="text-xs mb-1 uppercase tracking-widest" style={{ color: "hsl(43 74% 40%)" }}>Apparent Solar Time</div>
+                <div className="text-3xl font-mono font-bold" style={{ color: "hsl(43 74% 70%)" }}>
+                  {solarTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                </div>
+                <div className="text-xs mt-2" style={{ color: "hsl(43 74% 35%)" }}>Based on actual Sun position + longitude correction</div>
+              </div>
+              <div className="rounded-xl border p-4" style={{ background: "hsl(222 47% 6%)", borderColor: "hsl(43 74% 25%)" }}>
+                <div className="text-xs mb-1 uppercase tracking-widest" style={{ color: "hsl(43 74% 40%)" }}>Mean Civil Time (Local)</div>
+                <div className="text-3xl font-mono font-bold" style={{ color: "hsl(200 60% 65%)" }}>
+                  {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                </div>
+                <div className="text-xs mt-2" style={{ color: "hsl(43 74% 35%)" }}>Standard timezone time</div>
+              </div>
+            </div>
+            <div className="mt-3">
+              <DataCard title="Time Difference" value={`${eot >= 0 ? "+" : ""}${fmtNum(eot, 2)} minutes`}
+                sub="Solar time ahead of clock time" icon="⚖️" />
+            </div>
+          </section>
+
+          {/* ── FOOTER ── */}
+          <div className="text-center py-8">
+            <GoldDivider />
+            <p className="text-xs mt-4 tracking-widest italic" style={{ color: "hsl(43 74% 30%)" }}>
               "A masterpiece of time, astronomy, and human craftsmanship."
-            </h2>
-            <p className="mt-6 text-xs uppercase tracking-widest" style={{ color: "hsl(43 74% 45%)" }}>
-              Vacheron Constantin · Les Cabinotiers · Geneva · Since 1755
+            </p>
+            <p className="text-xs mt-2" style={{ color: "hsl(43 74% 20%)" }}>
+              All calculations performed in real-time • Updates every second
             </p>
           </div>
-        </section>
 
+        </div>
       </div>
     </Layout>
   );

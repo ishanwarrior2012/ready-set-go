@@ -21,6 +21,7 @@ import {
   Orbit,
   Car,
   Satellite,
+  Watch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -49,11 +50,6 @@ const navigationGroups = [
       { label: "Earthquakes", icon: Mountain, path: "/earthquakes" },
       { label: "Volcanoes", icon: Flame, path: "/volcanoes" },
       { label: "Tsunami", icon: Waves, path: "/tsunami" },
-    ],
-  },
-  {
-    label: "Live Feeds",
-    items: [
       { label: "News Feed", icon: Newspaper, path: "/news" },
       { label: "Space Tracker", icon: Satellite, path: "/space" },
       { label: "Fire Map", icon: Flame, path: "/fires" },
@@ -66,6 +62,7 @@ const navigationGroups = [
       { label: "Weather", icon: Cloud, path: "/weather" },
       { label: "Global Radio", icon: Radio, path: "/radio" },
       { label: "ISS Tracker", icon: Orbit, path: "/iss" },
+      { label: "Watch Showcase", icon: Watch, path: "/watch" },
     ],
   },
   {

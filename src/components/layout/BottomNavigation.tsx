@@ -18,6 +18,7 @@ import {
   Flame,
   Car,
   Satellite,
+  Watch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -58,14 +59,15 @@ const trackingSubmenu = [
   { label: "Volcanoes", icon: Mountain, path: "/volcanoes" },
   { label: "Tsunami", icon: Waves, path: "/tsunami" },
   { label: "ISS", icon: Orbit, path: "/iss" },
+  { label: "News", icon: Newspaper, path: "/news" },
+  { label: "Space", icon: Satellite, path: "/space" },
+  { label: "Fire Map", icon: Flame, path: "/fires" },
+  { label: "Traffic", icon: Car, path: "/traffic" },
 ];
 
 const moreMenuItems = [
   { label: "Chill", icon: Film, path: "/chill", gradient: "from-pink-500 to-purple-600" },
-  { label: "News", icon: Newspaper, path: "/news", gradient: "from-blue-500 to-indigo-600" },
-  { label: "Space", icon: Satellite, path: "/space", gradient: "from-indigo-600 to-purple-700" },
-  { label: "Fire Map", icon: Flame, path: "/fires", gradient: "from-red-500 to-orange-600" },
-  { label: "Traffic", icon: Car, path: "/traffic", gradient: "from-amber-500 to-yellow-600" },
+  { label: "Watch", icon: Watch, path: "/watch", gradient: "from-yellow-700 to-amber-900" },
   { label: "Settings", icon: Settings, path: "/settings", gradient: "from-slate-500 to-slate-700" },
 ];
 
@@ -83,13 +85,13 @@ export function BottomNavigation() {
   };
 
   const isTrackingActive = () => {
-    return ["/flights", "/marine", "/earthquakes", "/volcanoes", "/tsunami", "/iss"].some(p => 
+    return ["/flights", "/marine", "/earthquakes", "/volcanoes", "/tsunami", "/iss", "/news", "/space", "/fires", "/traffic"].some(p => 
       location.pathname.startsWith(p)
     );
   };
 
   const isMoreActive = () => {
-    return ["/chill", "/settings", "/news", "/space", "/fires", "/traffic"].some(p => location.pathname.startsWith(p));
+    return ["/chill", "/settings", "/watch"].some(p => location.pathname.startsWith(p));
   };
 
   const handleTrackingClick = (e: React.MouseEvent) => {
@@ -125,7 +127,7 @@ export function BottomNavigation() {
             onClick={closeAllMenus} 
           />
           <div className="fixed bottom-20 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 bg-card border rounded-xl shadow-xl p-2 animate-fade-in">
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1">
               {trackingSubmenu.map((item) => (
                 <button
                   key={item.path}

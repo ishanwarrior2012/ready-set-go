@@ -35,6 +35,7 @@ const News = lazy(() => import("./pages/News"));
 const SpaceTracker = lazy(() => import("./pages/SpaceTracker"));
 const FireMap = lazy(() => import("./pages/FireMap"));
 const TrafficMonitor = lazy(() => import("./pages/TrafficMonitor"));
+const WatchShowcase = lazy(() => import("./pages/WatchShowcase"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -103,7 +104,8 @@ const App = () => {
                       <Route path="/news" element={<AuthGuard><News /></AuthGuard>} />
                       <Route path="/space" element={<AuthGuard><SpaceTracker /></AuthGuard>} />
                       <Route path="/fires" element={<AuthGuard><FireMap /></AuthGuard>} />
-                      <Route path="/traffic" element={<AuthGuard><TrafficMonitor /></AuthGuard>} />
+                       <Route path="/traffic" element={<AuthGuard><TrafficMonitor /></AuthGuard>} />
+                       <Route path="/watch" element={<AuthGuard><WatchShowcase /></AuthGuard>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>

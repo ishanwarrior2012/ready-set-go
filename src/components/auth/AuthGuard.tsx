@@ -9,8 +9,19 @@ interface AuthGuardProps {
 }
 
 /**
- * AuthGuard component that redirects unauthenticated users to the auth page.
- * Use this to wrap pages that require authentication.
+ * Validates that a redirect path is safe (internal, relative path only).
+ */
+function isValidRedirectPath(path: string): boolean {
+  if (!path.startsWith('/') || path.startsWith('//')) return false;
+  if (path.includes(':')) return false;
+  const decoded = decodeURIComponent(path);
+  if (decoded.startsWith('//') || decoded.includes(':')) return false;
+  return true;
+}
+
+/**
+ * AuthGuard: Redirects unauthenticated users to /auth.
+ * Also redirects new users (who haven't done onboarding) to /onboarding.
  */
 export function AuthGuard({ children, fallbackPath = "/auth" }: AuthGuardProps) {
   const { user, loading } = useAuth();
@@ -20,47 +31,32 @@ export function AuthGuard({ children, fallbackPath = "/auth" }: AuthGuardProps) 
   useEffect(() => {
     if (!loading && !user) {
       navigate(fallbackPath, { state: { from: location }, replace: true });
+      return;
+    }
+    // If user is logged in but hasn't completed onboarding, redirect there
+    // (skip redirect if already on onboarding page)
+    if (!loading && user && location.pathname !== "/onboarding") {
+      const onboardingDone = localStorage.getItem(`onboarding_done_${user.id}`);
+      if (!onboardingDone) {
+        navigate("/onboarding", { replace: true });
+      }
     }
   }, [user, loading, navigate, fallbackPath, location]);
 
-  if (loading) {
-    return <LoadingPage />;
-  }
+  if (loading) return <LoadingPage />;
+  if (!user) return null;
 
-  if (!user) {
-    return null;
+  // Don't render children if onboarding pending (avoid flash)
+  if (location.pathname !== "/onboarding") {
+    const onboardingDone = localStorage.getItem(`onboarding_done_${user.id}`);
+    if (!onboardingDone) return null;
   }
 
   return <>{children}</>;
 }
 
 /**
- * Validates that a redirect path is safe (internal, relative path only).
- * Prevents open redirect attacks by rejecting external URLs and protocol-relative URLs.
- */
-function isValidRedirectPath(path: string): boolean {
-  // Must start with a single slash (not protocol-relative //)
-  if (!path.startsWith('/') || path.startsWith('//')) {
-    return false;
-  }
-  
-  // Block any path that contains protocol indicators
-  if (path.includes(':')) {
-    return false;
-  }
-  
-  // Block encoded characters that could bypass checks
-  const decoded = decodeURIComponent(path);
-  if (decoded.startsWith('//') || decoded.includes(':')) {
-    return false;
-  }
-  
-  return true;
-}
-
-/**
- * GuestGuard component that redirects authenticated users away from auth pages.
- * Use this to wrap pages that should only be accessible to unauthenticated users.
+ * GuestGuard: Redirects authenticated users away from auth pages.
  */
 export function GuestGuard({ children, redirectPath = "/" }: { children: React.ReactNode; redirectPath?: string }) {
   const { user, loading } = useAuth();
@@ -69,22 +65,13 @@ export function GuestGuard({ children, redirectPath = "/" }: { children: React.R
 
   useEffect(() => {
     if (!loading && user) {
-      // Redirect to the page they came from, or default to dashboard
       const requestedPath = (location.state as { from?: { pathname: string } })?.from?.pathname || redirectPath;
-      
-      // Validate the redirect path to prevent open redirect attacks
       const safePath = isValidRedirectPath(requestedPath) ? requestedPath : redirectPath;
       navigate(safePath, { replace: true });
     }
   }, [user, loading, navigate, redirectPath, location]);
 
-  if (loading) {
-    return <LoadingPage />;
-  }
-
-  if (user) {
-    return null;
-  }
-
+  if (loading) return <LoadingPage />;
+  if (user) return null;
   return <>{children}</>;
 }

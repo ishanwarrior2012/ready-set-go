@@ -33,23 +33,49 @@ export default function Dashboard() {
   };
 
   const handleExport = () => {
+    const now = new Date();
     const exportData = {
-      exportedAt: new Date().toISOString(),
-      stats: {
+      exportedAt: now.toISOString(),
+      exportedAtHuman: now.toLocaleString(),
+      app: "SafeTrack",
+      version: "1.0",
+      liveStats: {
         activeFlights: liveStats.activeFlights,
         shipsTracked: liveStats.shipsTracked,
-        recentQuakes: liveStats.recentQuakes,
+        recentEarthquakes: liveStats.recentQuakes,
+        strongestQuakeMagnitude: liveStats.strongestQuakeMagnitude,
+        dataNote: "Flight & ship counts are live estimates; earthquake data from USGS 2.5+ last 24h",
       },
-      note: "SafeTrack dashboard snapshot",
+      trackingModules: [
+        { module: "Flights", path: "/flights", description: "Real-time aircraft tracking via OpenSky" },
+        { module: "Marine", path: "/marine", description: "Global vessel tracking" },
+        { module: "Earthquakes", path: "/earthquakes", description: "USGS seismic activity feed" },
+        { module: "Volcanoes", path: "/volcanoes", description: "Global volcanic activity monitor" },
+        { module: "ISS", path: "/iss", description: "International Space Station tracker" },
+        { module: "Tsunami", path: "/tsunami", description: "Tsunami alert system" },
+        { module: "Weather", path: "/weather", description: "Global weather layers" },
+        { module: "Fire Map", path: "/fires", description: "Active wildfire tracking" },
+        { module: "Traffic", path: "/traffic", description: "Road traffic monitor" },
+        { module: "Space", path: "/space", description: "Space objects tracker" },
+        { module: "News", path: "/news", description: "Global news feed" },
+      ],
+      astronomicalData: {
+        timestamp: now.toISOString(),
+        julianDay: (now.getTime() / 86400000 + 2440587.5).toFixed(5),
+        dayOfYear: Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000),
+        note: "Full astronomical dashboard available at /watch",
+      },
+      exportFormat: "JSON",
+      license: "SafeTrack internal data export",
     };
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `safetrack-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `safetrack-export-${now.toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast({ title: "Export complete", description: "Dashboard data downloaded as JSON." });
+    toast({ title: "Export complete", description: "Full dashboard data downloaded as JSON." });
   };
 
   return (

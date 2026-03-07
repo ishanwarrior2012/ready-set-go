@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { MapPin, LocateFixed, X, RefreshCw } from "lucide-react";
+import { MapPin, LocateFixed, X, RefreshCw, Expand, Shrink } from "lucide-react";
 
 // ─── ASTRONOMICAL CALCULATIONS ───────────────────────────────────────────────
 
@@ -14,10 +14,7 @@ function julianDay(date: Date): number {
   const m = (date.getMonth() + 1) + 12 * a - 3;
   return date.getDate()
     + Math.floor((153 * m + 2) / 5)
-    + 365 * y
-    + Math.floor(y / 4)
-    - Math.floor(y / 100)
-    + Math.floor(y / 400)
+    + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400)
     - 32045
     + (date.getHours() - 12) / 24
     + date.getMinutes() / 1440
@@ -26,14 +23,11 @@ function julianDay(date: Date): number {
 
 function moonPhase(date: Date): { phase: number; name: string; age: number; illumination: number } {
   const jd = julianDay(date);
-  const newMoon2000 = 2451549.5;
   const synodicMonth = 29.53058867;
-  const daysSince = jd - newMoon2000;
-  const phase = ((daysSince % synodicMonth) + synodicMonth) % synodicMonth;
+  const phase = ((jd - 2451549.5) % synodicMonth + synodicMonth) % synodicMonth;
   const illumination = 0.5 * (1 - Math.cos(2 * Math.PI * phase / synodicMonth));
   const names = ["New Moon","Waxing Crescent","First Quarter","Waxing Gibbous","Full Moon","Waning Gibbous","Last Quarter","Waning Crescent"];
-  const idx = Math.floor((phase / synodicMonth) * 8) % 8;
-  return { phase: phase / synodicMonth, name: names[idx], age: phase, illumination };
+  return { phase: phase / synodicMonth, name: names[Math.floor((phase / synodicMonth) * 8) % 8], age: phase, illumination };
 }
 
 function equationOfTime(date: Date): number {
@@ -84,13 +78,11 @@ function getSunriseSunset(date: Date, lat = 40.7128, lng = -74.006): { sunrise: 
   const toDate = (jd: number) => new Date((jd - 2440587.5) * 86400000);
   const sunrise = toDate(Jrise);
   const sunset = toDate(Jset);
-  const daylength = (Jset - Jrise) * 24;
-  return { sunrise, sunset, daylength };
+  return { sunrise, sunset, daylength: (Jset - Jrise) * 24 };
 }
 
 function getSeason(date: Date): { name: string; progress: number; icon: string } {
-  const month = date.getMonth();
-  const day = date.getDate();
+  const month = date.getMonth(), day = date.getDate();
   if ((month === 2 && day >= 20) || month === 3 || month === 4 || (month === 5 && day < 21))
     return { name: "Spring", progress: ((month - 2) * 30 + day) / 92, icon: "🌸" };
   if ((month === 5 && day >= 21) || month === 6 || month === 7 || (month === 8 && day < 23))
@@ -115,18 +107,18 @@ function getChineseLunisolar(date: Date) {
 
 function getZodiac(date: Date) {
   const signs = [
-    { sign: "Capricorn", symbol: "♑", element: "Earth", startDate: "Dec 22" },
-    { sign: "Aquarius", symbol: "♒", element: "Air", startDate: "Jan 20" },
-    { sign: "Pisces", symbol: "♓", element: "Water", startDate: "Feb 19" },
-    { sign: "Aries", symbol: "♈", element: "Fire", startDate: "Mar 21" },
-    { sign: "Taurus", symbol: "♉", element: "Earth", startDate: "Apr 20" },
-    { sign: "Gemini", symbol: "♊", element: "Air", startDate: "May 21" },
-    { sign: "Cancer", symbol: "♋", element: "Water", startDate: "Jun 21" },
-    { sign: "Leo", symbol: "♌", element: "Fire", startDate: "Jul 23" },
-    { sign: "Virgo", symbol: "♍", element: "Earth", startDate: "Aug 23" },
-    { sign: "Libra", symbol: "♎", element: "Air", startDate: "Sep 23" },
-    { sign: "Scorpio", symbol: "♏", element: "Water", startDate: "Oct 23" },
-    { sign: "Sagittarius", symbol: "♐", element: "Fire", startDate: "Nov 22" },
+    { sign: "Capricorn", symbol: "♑", element: "Earth" },
+    { sign: "Aquarius", symbol: "♒", element: "Air" },
+    { sign: "Pisces", symbol: "♓", element: "Water" },
+    { sign: "Aries", symbol: "♈", element: "Fire" },
+    { sign: "Taurus", symbol: "♉", element: "Earth" },
+    { sign: "Gemini", symbol: "♊", element: "Air" },
+    { sign: "Cancer", symbol: "♋", element: "Water" },
+    { sign: "Leo", symbol: "♌", element: "Fire" },
+    { sign: "Virgo", symbol: "♍", element: "Earth" },
+    { sign: "Libra", symbol: "♎", element: "Air" },
+    { sign: "Scorpio", symbol: "♏", element: "Water" },
+    { sign: "Sagittarius", symbol: "♐", element: "Fire" },
   ];
   const m = date.getMonth() + 1, d = date.getDate();
   if ((m === 12 && d >= 22) || (m === 1 && d < 20)) return signs[0];
@@ -146,65 +138,95 @@ function getZodiac(date: Date) {
 function isLeapYear(year: number): boolean {
   return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 }
-
 function getLeapYearInfo(year: number) {
-  let last = year - 1;
-  while (!isLeapYear(last)) last--;
-  let next = year + 1;
-  while (!isLeapYear(next)) next++;
+  let last = year - 1; while (!isLeapYear(last)) last--;
+  let next = year + 1; while (!isLeapYear(next)) next++;
   return { current: isLeapYear(year), last, next };
 }
 
-// ─── STAR DATA ────────────────────────────────────────────────────────────────
+// ─── STAR + CONSTELLATION DATA ────────────────────────────────────────────────
 const STARS = [
-  { name: "Sirius", ra: 101.3, dec: -16.7, mag: -1.46 },
-  { name: "Canopus", ra: 95.9, dec: -52.7, mag: -0.72 },
-  { name: "Arcturus", ra: 213.9, dec: 19.2, mag: -0.05 },
-  { name: "Vega", ra: 279.2, dec: 38.8, mag: 0.03 },
-  { name: "Capella", ra: 79.2, dec: 46.0, mag: 0.08 },
-  { name: "Rigel", ra: 78.6, dec: -8.2, mag: 0.13 },
-  { name: "Procyon", ra: 114.8, dec: 5.2, mag: 0.34 },
-  { name: "Betelgeuse", ra: 88.8, dec: 7.4, mag: 0.42 },
-  { name: "Altair", ra: 297.7, dec: 8.9, mag: 0.77 },
-  { name: "Aldebaran", ra: 68.9, dec: 16.5, mag: 0.85 },
-  { name: "Spica", ra: 201.3, dec: -11.2, mag: 0.97 },
-  { name: "Antares", ra: 247.4, dec: -26.4, mag: 1.06 },
-  { name: "Pollux", ra: 116.3, dec: 28.0, mag: 1.14 },
-  { name: "Fomalhaut", ra: 344.4, dec: -29.6, mag: 1.16 },
-  { name: "Deneb", ra: 310.4, dec: 45.3, mag: 1.25 },
-  { name: "Regulus", ra: 152.1, dec: 11.97, mag: 1.35 },
-  { name: "Castor", ra: 113.6, dec: 31.9, mag: 1.58 },
-  { name: "Bellatrix", ra: 81.3, dec: 6.35, mag: 1.64 },
-  { name: "Elnath", ra: 81.6, dec: 28.6, mag: 1.65 },
-  { name: "Alnilam", ra: 84.1, dec: -1.2, mag: 1.70 },
-  { name: "Alnitak", ra: 85.2, dec: -1.94, mag: 1.77 },
-  { name: "Dubhe", ra: 165.9, dec: 61.75, mag: 1.79 },
-  { name: "Mirfak", ra: 51.1, dec: 49.86, mag: 1.79 },
-  { name: "Alioth", ra: 193.5, dec: 55.96, mag: 1.76 },
-  { name: "Alkaid", ra: 206.9, dec: 49.31, mag: 1.85 },
+  { name: "Sirius", ra: 101.3, dec: -16.7, mag: -1.46, con: "CMa" },
+  { name: "Canopus", ra: 95.9, dec: -52.7, mag: -0.72, con: "Car" },
+  { name: "Arcturus", ra: 213.9, dec: 19.2, mag: -0.05, con: "Boo" },
+  { name: "Vega", ra: 279.2, dec: 38.8, mag: 0.03, con: "Lyr" },
+  { name: "Capella", ra: 79.2, dec: 46.0, mag: 0.08, con: "Aur" },
+  { name: "Rigel", ra: 78.6, dec: -8.2, mag: 0.13, con: "Ori" },
+  { name: "Procyon", ra: 114.8, dec: 5.2, mag: 0.34, con: "CMi" },
+  { name: "Betelgeuse", ra: 88.8, dec: 7.4, mag: 0.42, con: "Ori" },
+  { name: "Altair", ra: 297.7, dec: 8.9, mag: 0.77, con: "Aql" },
+  { name: "Aldebaran", ra: 68.9, dec: 16.5, mag: 0.85, con: "Tau" },
+  { name: "Spica", ra: 201.3, dec: -11.2, mag: 0.97, con: "Vir" },
+  { name: "Antares", ra: 247.4, dec: -26.4, mag: 1.06, con: "Sco" },
+  { name: "Pollux", ra: 116.3, dec: 28.0, mag: 1.14, con: "Gem" },
+  { name: "Fomalhaut", ra: 344.4, dec: -29.6, mag: 1.16, con: "PsA" },
+  { name: "Deneb", ra: 310.4, dec: 45.3, mag: 1.25, con: "Cyg" },
+  { name: "Regulus", ra: 152.1, dec: 11.97, mag: 1.35, con: "Leo" },
+  { name: "Castor", ra: 113.6, dec: 31.9, mag: 1.58, con: "Gem" },
+  { name: "Bellatrix", ra: 81.3, dec: 6.35, mag: 1.64, con: "Ori" },
+  { name: "Elnath", ra: 81.6, dec: 28.6, mag: 1.65, con: "Tau" },
+  { name: "Alnilam", ra: 84.1, dec: -1.2, mag: 1.70, con: "Ori" },
+  { name: "Alnitak", ra: 85.2, dec: -1.94, mag: 1.77, con: "Ori" },
+  { name: "Dubhe", ra: 165.9, dec: 61.75, mag: 1.79, con: "UMa" },
+  { name: "Mirfak", ra: 51.1, dec: 49.86, mag: 1.79, con: "Per" },
+  { name: "Alioth", ra: 193.5, dec: 55.96, mag: 1.76, con: "UMa" },
+  { name: "Alkaid", ra: 206.9, dec: 49.31, mag: 1.85, con: "UMa" },
+  { name: "Hadar", ra: 210.9, dec: -60.4, mag: 0.61, con: "Cen" },
+  { name: "Acrux", ra: 186.6, dec: -63.1, mag: 0.76, con: "Cru" },
+  { name: "Gacrux", ra: 187.8, dec: -57.1, mag: 1.63, con: "Cru" },
+  { name: "Mimosa", ra: 191.9, dec: -59.7, mag: 1.25, con: "Cru" },
+  { name: "Rigil Kent", ra: 219.9, dec: -60.8, mag: -0.01, con: "Cen" },
+  { name: "Achernar", ra: 24.4, dec: -57.2, mag: 0.46, con: "Eri" },
+  { name: "Adhara", ra: 104.7, dec: -28.97, mag: 1.50, con: "CMa" },
+  { name: "Shaula", ra: 263.4, dec: -37.1, mag: 1.62, con: "Sco" },
+  { name: "Sargas", ra: 264.3, dec: -42.98, mag: 1.87, con: "Sco" },
+  { name: "Wezen", ra: 107.1, dec: -26.39, mag: 1.84, con: "CMa" },
+  { name: "Kaus Austr", ra: 276.0, dec: -34.38, mag: 1.85, con: "Sgr" },
+  { name: "Avior", ra: 125.6, dec: -59.51, mag: 1.86, con: "Car" },
+  { name: "Menkent", ra: 211.7, dec: -36.37, mag: 2.06, con: "Cen" },
+  { name: "Atria", ra: 253.4, dec: -69.03, mag: 1.92, con: "TrA" },
+  { name: "Alnair", ra: 332.1, dec: -46.96, mag: 1.74, con: "Gru" },
+  { name: "Peacock", ra: 306.4, dec: -56.74, mag: 1.94, con: "Pav" },
+  { name: "Theta Sco", ra: 264.9, dec: -42.99, mag: 1.87, con: "Sco" },
+  { name: "Schedar", ra: 10.1, dec: 56.54, mag: 2.23, con: "Cas" },
+  { name: "Caph", ra: 2.3, dec: 59.15, mag: 2.28, con: "Cas" },
+  { name: "Navi", ra: 14.1, dec: 60.72, mag: 2.47, con: "Cas" },
+  { name: "Ruchbah", ra: 21.5, dec: 60.24, mag: 2.68, con: "Cas" },
+  { name: "Segin", ra: 28.6, dec: 63.67, mag: 3.38, con: "Cas" },
+  { name: "Polaris", ra: 37.9, dec: 89.26, mag: 1.97, con: "UMi" },
+  { name: "Kochab", ra: 222.7, dec: 74.16, mag: 2.07, con: "UMi" },
+  { name: "Pherkad", ra: 230.2, dec: 71.83, mag: 3.05, con: "UMi" },
+];
+
+// Constellation line data: pairs of star indices into STARS array
+const CONSTELLATIONS: { name: string; lines: number[][]; center: [number, number] }[] = [
+  { name: "Orion", lines: [[5,17],[17,19],[19,20],[5,15],[15,7],[7,3],[3,17],[19,20],[20,5]], center: [83, -2] },
+  { name: "Ursa Major", lines: [[21,23],[23,24],[24,12],[21,23],[22,23]], center: [180, 55] },
+  { name: "Ursa Minor", lines: [[47,48],[48,49],[49,47]], center: [230, 78] },
+  { name: "Cassiopeia", lines: [[42,43],[43,44],[44,45],[45,46]], center: [14, 60] },
+  { name: "Scorpius", lines: [[11,31],[31,32],[32,33]], center: [255, -30] },
+  { name: "Gemini", lines: [[12,16],[12,7],[16,18]], center: [115, 28] },
+  { name: "Crux", lines: [[26,28],[27,28]], center: [188, -60] },
+  { name: "Leo", lines: [[15,3],[3,11]], center: [152, 15] },
+  { name: "Cygnus", lines: [[14,8]], center: [305, 45] },
+  { name: "Aquila", lines: [[8,4]], center: [295, 10] },
+  { name: "Lyra", lines: [[3,13]], center: [279, 37] },
+  { name: "Taurus", lines: [[9,18]], center: [70, 20] },
+  { name: "Centaurus", lines: [[30,25],[25,37]], center: [212, -55] },
 ];
 
 // ─── GEOLOCATION DIALOG ───────────────────────────────────────────────────────
 interface GeoLocation { lat: number; lng: number; name: string }
 
-function LocationDialog({
-  onAllow, onDeny
-}: { onAllow: (loc: GeoLocation) => void; onDeny: () => void }) {
+function LocationDialog({ onAllow, onDeny }: { onAllow: (loc: GeoLocation) => void; onDeny: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleAllow = () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLoading(false);
-        onAllow({ lat: pos.coords.latitude, lng: pos.coords.longitude, name: "Your Location" });
-      },
-      (err) => {
-        setLoading(false);
-        setError(err.code === 1 ? "Location permission denied by browser." : "Unable to retrieve your location.");
-      },
+      (pos) => { setLoading(false); onAllow({ lat: pos.coords.latitude, lng: pos.coords.longitude, name: "Your Location" }); },
+      (err) => { setLoading(false); setError(err.code === 1 ? "Permission denied by browser." : "Unable to retrieve your location."); },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
@@ -221,10 +243,7 @@ function LocationDialog({
             <p className="text-muted-foreground text-xs">For accurate astronomical data</p>
           </div>
         </div>
-
-        <p className="text-muted-foreground text-sm mb-5 leading-relaxed">
-          Allow the Grand Complication dashboard to access your GPS coordinates for precise:
-        </p>
+        <p className="text-muted-foreground text-sm mb-4 leading-relaxed">Allow access to your GPS for precise:</p>
         <ul className="space-y-1 mb-5">
           {["Sunrise & Sunset times","Solar altitude & azimuth","Star visibility from your horizon","Sidereal time correction"].map(item => (
             <li key={item} className="flex items-center gap-2 text-sm text-foreground">
@@ -232,59 +251,145 @@ function LocationDialog({
             </li>
           ))}
         </ul>
-
-        {error && (
-          <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs">
-            {error}
-          </div>
-        )}
-
+        {error && <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs">{error}</div>}
         <div className="flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={onDeny} disabled={loading}>
-            <X className="w-4 h-4 mr-1" /> Use Default
-          </Button>
+          <Button variant="outline" className="flex-1" onClick={onDeny} disabled={loading}><X className="w-4 h-4 mr-1" /> Default</Button>
           <Button className="flex-1" onClick={handleAllow} disabled={loading}>
-            {loading ? (
-              <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
-            ) : (
-              <MapPin className="w-4 h-4 mr-1" />
-            )}
-            {loading ? "Locating…" : "Allow"}
+            {loading ? <RefreshCw className="w-4 h-4 mr-1 animate-spin" /> : <MapPin className="w-4 h-4 mr-1" />}
+            {loading ? "Locating…" : "Allow GPS"}
           </Button>
         </div>
-        <p className="text-muted-foreground text-xs text-center mt-3">
-          Default: New York (40.71°N, 74.01°W)
-        </p>
+        <p className="text-muted-foreground text-xs text-center mt-3">Default: New York (40.71°N, 74.01°W)</p>
       </div>
     </div>
   );
 }
 
-// ─── SHARED UI COMPONENTS ────────────────────────────────────────────────────
-
-function Divider() {
-  return <div className="w-full h-px my-2 bg-border" />;
-}
-
+// ─── SHARED UI ───────────────────────────────────────────────────────────────
 function SectionTitle({ children, sub }: { children: React.ReactNode; sub?: string }) {
   return (
     <div className="mb-5">
       <h2 className="text-xl font-bold tracking-widest uppercase text-primary">{children}</h2>
       {sub && <p className="text-sm mt-0.5 text-muted-foreground">{sub}</p>}
-      <Divider />
+      <div className="w-full h-px mt-2 bg-border" />
     </div>
   );
 }
 
-function DataCard({ title, value, sub, icon, highlight }: {
-  title: string; value: string; sub?: string; icon?: string; highlight?: boolean
-}) {
+function DataCard({ title, value, sub, icon, highlight }: { title: string; value: string; sub?: string; icon?: string; highlight?: boolean }) {
   return (
     <div className={`rounded-xl p-4 border ${highlight ? "bg-primary/10 border-primary/30" : "bg-card border-border"}`}>
       {icon && <div className="text-xl mb-1">{icon}</div>}
       <div className="text-xs uppercase tracking-widest mb-0.5 text-muted-foreground">{title}</div>
       <div className={`text-base font-bold ${highlight ? "text-primary" : "text-foreground"}`}>{value}</div>
       {sub && <div className="text-xs mt-0.5 text-muted-foreground">{sub}</div>}
+    </div>
+  );
+}
+
+// ─── LIVE ANALOG WATCH FACE ───────────────────────────────────────────────────
+function AnalogWatchFace({ date, moonPhaseVal, moonIllumination }: { date: Date; moonPhaseVal: number; moonIllumination: number }) {
+  const h = date.getHours() % 12, m = date.getMinutes(), s = date.getSeconds(), ms = date.getMilliseconds();
+  const secAngle = (s + ms / 1000) * 6 - 90;
+  const minAngle = (m + s / 60) * 6 - 90;
+  const hrAngle = (h + m / 60) * 30 - 90;
+  const size = 240, cx = size / 2, cy = size / 2, r = size / 2 - 8;
+
+  const moonX = cx + 55 * Math.cos(toRad(150));
+  const moonY = cy + 55 * Math.sin(toRad(150));
+  const moonR = 18;
+  const isWaxing = moonPhaseVal < 0.5;
+  const xScale = Math.cos(moonPhaseVal * 2 * Math.PI);
+  const mrx = Math.abs(moonR * xScale);
+  const sweep1 = isWaxing ? 0 : 1;
+  const sweep2 = isWaxing ? 1 : 0;
+  const isNew = moonPhaseVal < 0.02 || moonPhaseVal > 0.98;
+  const isFull = Math.abs(moonPhaseVal - 0.5) < 0.02;
+  const litPath = isNew || isFull ? "" :
+    `M ${moonX} ${moonY - moonR} A ${mrx} ${moonR} 0 0 ${sweep1} ${moonX} ${moonY + moonR} A ${moonR} ${moonR} 0 0 ${sweep2} ${moonX} ${moonY - moonR}`;
+
+  return (
+    <div className="flex flex-col items-center">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="drop-shadow-xl">
+        <defs>
+          <radialGradient id="watchFace" cx="50%" cy="50%">
+            <stop offset="0%" stopColor="hsl(var(--card))" />
+            <stop offset="100%" stopColor="hsl(var(--background))" />
+          </radialGradient>
+          <radialGradient id="moonSubdialBg" cx="50%" cy="50%">
+            <stop offset="0%" stopColor="hsl(var(--muted))" />
+            <stop offset="100%" stopColor="hsl(var(--background))" />
+          </radialGradient>
+        </defs>
+        {/* Outer ring */}
+        <circle cx={cx} cy={cy} r={r + 6} fill="hsl(var(--border))" stroke="hsl(var(--border))" strokeWidth="2" />
+        {/* Face */}
+        <circle cx={cx} cy={cy} r={r} fill="url(#watchFace)" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+
+        {/* Hour markers */}
+        {Array.from({ length: 60 }).map((_, i) => {
+          const a = toRad(i * 6 - 90);
+          const isHour = i % 5 === 0;
+          const r1 = r - (isHour ? 14 : 8);
+          const r2 = r - 4;
+          return (
+            <line key={i}
+              x1={cx + r1 * Math.cos(a)} y1={cy + r1 * Math.sin(a)}
+              x2={cx + r2 * Math.cos(a)} y2={cy + r2 * Math.sin(a)}
+              stroke={isHour ? "hsl(var(--foreground))" : "hsl(var(--border))"}
+              strokeWidth={isHour ? 2 : 0.8}
+              strokeLinecap="round"
+            />
+          );
+        })}
+
+        {/* Hour numbers */}
+        {[12,1,2,3,4,5,6,7,8,9,10,11].map((n, i) => {
+          const a = toRad(i * 30 - 90);
+          return (
+            <text key={n}
+              x={cx + (r - 26) * Math.cos(a)} y={cy + (r - 26) * Math.sin(a)}
+              textAnchor="middle" dominantBaseline="middle"
+              fill="hsl(var(--foreground))" fontSize="10" fontWeight="600" fontFamily="monospace"
+            >{n}</text>
+          );
+        })}
+
+        {/* Moon phase subdial */}
+        <circle cx={moonX} cy={moonY} r={moonR + 3} fill="hsl(var(--border))" />
+        <circle cx={moonX} cy={moonY} r={moonR} fill="url(#moonSubdialBg)" />
+        {isFull && <circle cx={moonX} cy={moonY} r={moonR} fill="hsl(var(--foreground) / 0.85)" />}
+        {!isNew && !isFull && litPath && <path d={litPath} fill="hsl(var(--foreground) / 0.85)" clipPath={`circle(${moonR}px at ${moonX}px ${moonY}px)`} />}
+        <text x={moonX} y={moonY + moonR + 10} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="7">MOON</text>
+        <text x={moonX} y={moonY + moonR + 17} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="6">{(moonIllumination * 100).toFixed(0)}%</text>
+
+        {/* Brand text */}
+        <text x={cx} y={cy - 30} textAnchor="middle" fill="hsl(var(--primary))" fontSize="7" letterSpacing="3">GRAND COMPLICATION</text>
+        <text x={cx} y={cy - 20} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="5.5" letterSpacing="2">ASTRONOMICAL</text>
+
+        {/* Hour hand */}
+        <line
+          x1={cx - 12 * Math.cos(toRad(hrAngle))} y1={cy - 12 * Math.sin(toRad(hrAngle))}
+          x2={cx + (r * 0.52) * Math.cos(toRad(hrAngle))} y2={cy + (r * 0.52) * Math.sin(toRad(hrAngle))}
+          stroke="hsl(var(--foreground))" strokeWidth="5" strokeLinecap="round"
+        />
+        {/* Minute hand */}
+        <line
+          x1={cx - 16 * Math.cos(toRad(minAngle))} y1={cy - 16 * Math.sin(toRad(minAngle))}
+          x2={cx + (r * 0.72) * Math.cos(toRad(minAngle))} y2={cy + (r * 0.72) * Math.sin(toRad(minAngle))}
+          stroke="hsl(var(--foreground))" strokeWidth="3" strokeLinecap="round"
+        />
+        {/* Second hand */}
+        <line
+          x1={cx - 20 * Math.cos(toRad(secAngle))} y1={cy - 20 * Math.sin(toRad(secAngle))}
+          x2={cx + (r * 0.82) * Math.cos(toRad(secAngle))} y2={cy + (r * 0.82) * Math.sin(toRad(secAngle))}
+          stroke="hsl(var(--destructive))" strokeWidth="1.5" strokeLinecap="round"
+        />
+        {/* Center cap */}
+        <circle cx={cx} cy={cy} r={5} fill="hsl(var(--foreground))" />
+        <circle cx={cx} cy={cy} r={2} fill="hsl(var(--destructive))" />
+      </svg>
+      <p className="text-xs text-muted-foreground mt-2 tracking-widest uppercase">Live Mechanical Movement</p>
     </div>
   );
 }
@@ -318,49 +423,179 @@ function MoonPhaseSVG({ phase, illumination }: { phase: number; illumination: nu
   );
 }
 
-// ─── STAR CHART SVG ──────────────────────────────────────────────────────────
-function StarChartSVG({ siderealDeg, lat }: { siderealDeg: number; lat: number }) {
+// ─── FULL STAR CHART ─────────────────────────────────────────────────────────
+type StarProjection = "horizon" | "equatorial";
+
+function FullStarChart({ siderealDeg, lat, projection, onClose }: {
+  siderealDeg: number; lat: number; projection: StarProjection; onClose: () => void;
+}) {
+  const size = Math.min(window.innerWidth, window.innerHeight) - 40;
+  const cx = size / 2, cy = size / 2, radius = size / 2 - 30;
+
+  const projectStar = (ra: number, dec: number) => {
+    if (projection === "equatorial") {
+      const raAdj = ((ra - siderealDeg) % 360 + 360) % 360;
+      const raRad = toRad(raAdj - 180);
+      const projR = radius * (90 - dec) / 90;
+      return { x: cx + projR * Math.sin(raRad + Math.PI), y: cy - projR * Math.cos(raRad + Math.PI) * 0.7, visible: projR < radius };
+    } else {
+      // Horizon projection: azimuth/altitude
+      const raAdj = ((ra - siderealDeg + 360) % 360);
+      const latRad = toRad(lat);
+      const decRad = toRad(dec);
+      const haRad = toRad(raAdj - 180);
+      const altRad = Math.asin(Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(haRad));
+      const alt = toDeg(altRad);
+      if (alt < -5) return { x: 0, y: 0, visible: false };
+      const azRad = Math.atan2(-Math.sin(haRad), Math.tan(decRad) * Math.cos(latRad) - Math.sin(latRad) * Math.cos(haRad));
+      const az = (toDeg(azRad) + 360) % 360;
+      const projR = radius * (90 - Math.max(0, alt)) / 90;
+      return { x: cx + projR * Math.sin(toRad(az)), y: cy - projR * Math.cos(toRad(az)), visible: projR < radius };
+    }
+  };
+
+  const starPositions = STARS.map(s => ({ ...s, ...projectStar(s.ra, s.dec) }));
+
+  return (
+    <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-center p-2">
+      <div className="flex items-center gap-3 mb-3 w-full max-w-2xl px-2">
+        <span className="text-sm font-bold text-primary uppercase tracking-widest flex-1">
+          {projection === "equatorial" ? "Equatorial Projection" : "Horizon Projection"} · LST {Math.floor(siderealDeg / 15)}h
+        </span>
+        <Button size="sm" variant="outline" onClick={onClose}><Shrink className="w-4 h-4 mr-1" /> Exit Fullscreen</Button>
+      </div>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ maxWidth: "100vmin", maxHeight: "100vmin" }}>
+        <defs>
+          <radialGradient id="fsSkyGrad" cx="50%" cy="50%">
+            <stop offset="0%" stopColor="hsl(var(--card))" />
+            <stop offset="100%" stopColor="hsl(var(--background))" />
+          </radialGradient>
+          <clipPath id="fsSkyClip"><circle cx={cx} cy={cy} r={radius} /></clipPath>
+        </defs>
+        <circle cx={cx} cy={cy} r={radius} fill="url(#fsSkyGrad)" stroke="hsl(var(--primary))" strokeWidth="2" />
+        {[0.25,0.5,0.75,1.0].map(f => (
+          <circle key={f} cx={cx} cy={cy} r={radius * f} fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" strokeDasharray="4 8" opacity="0.4" />
+        ))}
+        {/* Cardinal directions */}
+        {(projection === "horizon" ? [["N",cx,28],["E",size-20,cy+4],["S",cx,size-18],["W",20,cy+4]] : [["N",cx,28],["E",size-20,cy+4],["S",cx,size-18],["W",20,cy+4]]).map(([l,x,y]) => (
+          <text key={l as string} x={x as number} y={y as number} textAnchor="middle" fill="hsl(var(--primary))" fontSize="13" fontWeight="bold">{l as string}</text>
+        ))}
+        <g clipPath="url(#fsSkyClip)">
+          {/* Constellation lines */}
+          {CONSTELLATIONS.map(con => con.lines.map((pair, li) => {
+            const [i1, i2] = pair;
+            if (i1 >= STARS.length || i2 >= STARS.length) return null;
+            const s1 = { ...STARS[i1], ...projectStar(STARS[i1].ra, STARS[i1].dec) };
+            const s2 = { ...STARS[i2], ...projectStar(STARS[i2].ra, STARS[i2].dec) };
+            if (!s1.visible || !s2.visible) return null;
+            return (
+              <line key={`${con.name}-${li}`}
+                x1={s1.x} y1={s1.y} x2={s2.x} y2={s2.y}
+                stroke="hsl(var(--primary) / 0.35)" strokeWidth="0.8"
+              />
+            );
+          }))}
+          {/* Stars */}
+          {starPositions.map((star) => {
+            if (!star.visible) return null;
+            const starR = Math.max(1.2, 5 - star.mag * 1.5);
+            const brightness = Math.max(0.4, 1 - star.mag * 0.25);
+            return (
+              <g key={star.name}>
+                <circle cx={star.x} cy={star.y} r={starR + 2.5} fill={`hsl(var(--primary) / ${brightness * 0.15})`} />
+                <circle cx={star.x} cy={star.y} r={starR} fill={`hsl(var(--foreground) / ${brightness})`} />
+                {star.mag < 1.5 && (
+                  <text x={star.x + starR + 3} y={star.y + 4} fill="hsl(var(--muted-foreground))" fontSize="9" opacity="0.9">{star.name}</text>
+                )}
+              </g>
+            );
+          })}
+          {/* Constellation labels */}
+          {CONSTELLATIONS.map(con => {
+            const pos = projectStar(con.center[0], con.center[1]);
+            if (!pos.visible) return null;
+            return (
+              <text key={`label-${con.name}`} x={pos.x} y={pos.y} textAnchor="middle" fill="hsl(var(--primary) / 0.6)" fontSize="10" fontWeight="bold" letterSpacing="1">
+                {con.name.toUpperCase()}
+              </text>
+            );
+          })}
+        </g>
+        {/* Ecliptic line hint */}
+        <text x={cx} y={size - 8} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="10">
+          {starPositions.filter(s => s.visible).length} stars visible · {CONSTELLATIONS.length} constellations
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+// ─── COMPACT STAR CHART ───────────────────────────────────────────────────────
+function StarChartSVG({ siderealDeg, lat, onExpand }: { siderealDeg: number; lat: number; onExpand: () => void }) {
   const size = 260, cx = size / 2, cy = size / 2, radius = size / 2 - 12;
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="mx-auto">
-      <defs>
-        <radialGradient id="skyGrad" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="hsl(var(--card))" />
-          <stop offset="100%" stopColor="hsl(var(--background))" />
-        </radialGradient>
-        <clipPath id="skyClip"><circle cx={cx} cy={cy} r={radius} /></clipPath>
-      </defs>
-      <circle cx={cx} cy={cy} r={radius} fill="url(#skyGrad)" stroke="hsl(var(--primary))" strokeWidth="1.5" />
-      {[0.33, 0.66, 1.0].map(f => (
-        <circle key={f} cx={cx} cy={cy} r={radius * f} fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" strokeDasharray="4 4" opacity="0.5" />
-      ))}
-      <line x1={cx} y1={10} x2={cx} y2={size - 10} stroke="hsl(var(--border))" strokeWidth="0.5" opacity="0.4" />
-      <line x1={10} y1={cy} x2={size - 10} y2={cy} stroke="hsl(var(--border))" strokeWidth="0.5" opacity="0.4" />
-      {[["N",cx,16],["E",size-10,cy+4],["S",cx,size-4],["W",10,cy+4]].map(([l,x,y]) => (
-        <text key={l as string} x={x as number} y={y as number} textAnchor="middle" fill="hsl(var(--primary))" fontSize="9" fontWeight="bold">{l as string}</text>
-      ))}
-      <g clipPath="url(#skyClip)">
-        {STARS.map((star) => {
-          const raAdj = ((star.ra - siderealDeg) % 360 + 360) % 360;
-          const raRad = toRad(raAdj - 180);
-          const projR = radius * (90 - star.dec) / 90;
-          const x = cx + projR * Math.sin(raRad + Math.PI);
-          const y = cy - projR * Math.cos(raRad + Math.PI) * 0.7;
-          const starR = Math.max(0.8, 3 - star.mag * 1.2);
-          const brightness = Math.max(0.3, 1 - star.mag * 0.3);
-          if (x < 0 || x > size || y < 0 || y > size) return null;
-          return (
-            <g key={star.name}>
-              <circle cx={x} cy={y} r={starR + 2} fill={`hsl(var(--primary) / ${brightness * 0.2})`} />
-              <circle cx={x} cy={y} r={starR} fill={`hsl(var(--foreground) / ${brightness})`} />
-              {star.mag < 0.5 && (
-                <text x={x + 5} y={y + 3} fill="hsl(var(--muted-foreground))" fontSize="7" opacity="0.8">{star.name}</text>
-              )}
-            </g>
-          );
-        })}
-      </g>
-    </svg>
+    <div className="relative">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="mx-auto">
+        <defs>
+          <radialGradient id="skyGrad" cx="50%" cy="50%">
+            <stop offset="0%" stopColor="hsl(var(--card))" />
+            <stop offset="100%" stopColor="hsl(var(--background))" />
+          </radialGradient>
+          <clipPath id="skyClip"><circle cx={cx} cy={cy} r={radius} /></clipPath>
+        </defs>
+        <circle cx={cx} cy={cy} r={radius} fill="url(#skyGrad)" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+        {[0.33, 0.66, 1.0].map(f => (
+          <circle key={f} cx={cx} cy={cy} r={radius * f} fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" strokeDasharray="4 4" opacity="0.5" />
+        ))}
+        <line x1={cx} y1={10} x2={cx} y2={size - 10} stroke="hsl(var(--border))" strokeWidth="0.5" opacity="0.4" />
+        <line x1={10} y1={cy} x2={size - 10} y2={cy} stroke="hsl(var(--border))" strokeWidth="0.5" opacity="0.4" />
+        {[["N",cx,14],["E",size-8,cy+4],["S",cx,size-2],["W",8,cy+4]].map(([l,x,y]) => (
+          <text key={l as string} x={x as number} y={y as number} textAnchor="middle" fill="hsl(var(--primary))" fontSize="9" fontWeight="bold">{l as string}</text>
+        ))}
+        <g clipPath="url(#skyClip)">
+          {/* Constellation lines */}
+          {CONSTELLATIONS.map(con => con.lines.map((pair, li) => {
+            const [i1, i2] = pair;
+            if (i1 >= STARS.length || i2 >= STARS.length) return null;
+            const s1 = STARS[i1], s2 = STARS[i2];
+            const calcPos = (star: typeof STARS[0]) => {
+              const raAdj = ((star.ra - siderealDeg) % 360 + 360) % 360;
+              const raRad = toRad(raAdj - 180);
+              const projR = radius * (90 - star.dec) / 90;
+              return { x: cx + projR * Math.sin(raRad + Math.PI), y: cy - projR * Math.cos(raRad + Math.PI) * 0.7 };
+            };
+            const p1 = calcPos(s1), p2 = calcPos(s2);
+            return (
+              <line key={`${con.name}-${li}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
+                stroke="hsl(var(--primary) / 0.3)" strokeWidth="0.8" />
+            );
+          }))}
+          {STARS.map((star) => {
+            const raAdj = ((star.ra - siderealDeg) % 360 + 360) % 360;
+            const raRad = toRad(raAdj - 180);
+            const projR = radius * (90 - star.dec) / 90;
+            const x = cx + projR * Math.sin(raRad + Math.PI);
+            const y = cy - projR * Math.cos(raRad + Math.PI) * 0.7;
+            const starR = Math.max(0.8, 3 - star.mag * 1.2);
+            const brightness = Math.max(0.3, 1 - star.mag * 0.3);
+            if (x < 0 || x > size || y < 0 || y > size) return null;
+            return (
+              <g key={star.name}>
+                <circle cx={x} cy={y} r={starR + 2} fill={`hsl(var(--primary) / ${brightness * 0.2})`} />
+                <circle cx={x} cy={y} r={starR} fill={`hsl(var(--foreground) / ${brightness})`} />
+                {star.mag < 0.5 && <text x={x + 5} y={y + 3} fill="hsl(var(--muted-foreground))" fontSize="7" opacity="0.8">{star.name}</text>}
+              </g>
+            );
+          })}
+        </g>
+      </svg>
+      <button
+        onClick={onExpand}
+        className="absolute top-2 right-2 flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-card/80 border border-border text-muted-foreground hover:text-primary hover:border-primary transition-colors"
+      >
+        <Expand className="w-3.5 h-3.5" /> Fullscreen
+      </button>
+    </div>
   );
 }
 
@@ -378,16 +613,14 @@ function TourbillonSVG({ angle }: { angle: number }) {
       <circle r={r} fill="url(#tGrad)" stroke="hsl(var(--primary))" strokeWidth="1.5" />
       <g transform={`rotate(${angle})`}>
         {[0, 60, 120, 180, 240, 300].map(a => (
-          <line key={a} x1={0} y1={0}
-            x2={r * 0.8 * Math.cos(toRad(a))} y2={r * 0.8 * Math.sin(toRad(a))}
+          <line key={a} x1={0} y1={0} x2={r * 0.8 * Math.cos(toRad(a))} y2={r * 0.8 * Math.sin(toRad(a))}
             stroke="hsl(var(--primary))" strokeWidth="1" opacity="0.7" />
         ))}
         <circle r={r * 0.75} fill="none" stroke="hsl(var(--primary))" strokeWidth="1" />
         <g transform={`rotate(${angle * 3})`}>
           <circle r={r * 0.45} fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.7" />
           {[0, 90, 180, 270].map(a => (
-            <line key={a} x1={0} y1={0}
-              x2={r * 0.45 * Math.cos(toRad(a))} y2={r * 0.45 * Math.sin(toRad(a))}
+            <line key={a} x1={0} y1={0} x2={r * 0.45 * Math.cos(toRad(a))} y2={r * 0.45 * Math.sin(toRad(a))}
               stroke="hsl(var(--foreground))" strokeWidth="0.8" opacity="0.6" />
           ))}
           <circle r={4} fill="hsl(var(--primary))" />
@@ -395,10 +628,8 @@ function TourbillonSVG({ angle }: { angle: number }) {
         <g transform={`rotate(${-angle * 2})`}>
           {Array.from({ length: 15 }).map((_, i) => {
             const a = (i * 360 / 15);
-            const x = r * 0.28 * Math.cos(toRad(a));
-            const y = r * 0.28 * Math.sin(toRad(a));
-            return <line key={i} x1={x * 0.6} y1={y * 0.6} x2={x} y2={y}
-              stroke="hsl(var(--foreground))" strokeWidth="0.8" opacity="0.5" />;
+            const x = r * 0.28 * Math.cos(toRad(a)), y = r * 0.28 * Math.sin(toRad(a));
+            return <line key={i} x1={x * 0.6} y1={y * 0.6} x2={x} y2={y} stroke="hsl(var(--foreground))" strokeWidth="0.8" opacity="0.5" />;
           })}
           <circle r={r * 0.18} fill="none" stroke="hsl(var(--border))" strokeWidth="0.8" />
         </g>
@@ -439,17 +670,13 @@ function WestminsterChime({ minute, second }: { minute: number; second: number }
                 <ellipse cx={20} cy={48} rx={15} ry={3} fill="hsl(var(--muted))" />
                 <circle cx={20} cy={4} r={3} fill="hsl(var(--primary))" />
               </svg>
-              {activeGongs[i] === 1 && beat && (
-                <div className="absolute -inset-2 rounded-full animate-ping bg-primary/20" />
-              )}
+              {activeGongs[i] === 1 && beat && <div className="absolute -inset-2 rounded-full animate-ping bg-primary/20" />}
             </div>
             <span className={`text-xs font-bold ${activeGongs[i] ? "text-primary" : "text-muted-foreground"}`}>{note}</span>
           </div>
         ))}
       </div>
-      <div className="text-center text-xs text-muted-foreground">
-        Quarter {quarter + 1} of 4 — {minute % 15}m past quarter
-      </div>
+      <div className="text-center text-xs text-muted-foreground">Quarter {quarter + 1} of 4 — {minute % 15}m past quarter</div>
     </div>
   );
 }
@@ -460,24 +687,15 @@ function PerpetualCalendarGrid({ date }: { date: Date }) {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = date.getDate();
-  const cells = Array.from({ length: 42 }, (_, i) => {
-    const d = i - firstDay + 1;
-    return d > 0 && d <= daysInMonth ? d : null;
-  });
+  const cells = Array.from({ length: 42 }, (_, i) => { const d = i - firstDay + 1; return d > 0 && d <= daysInMonth ? d : null; });
   const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   return (
     <div>
-      <div className="text-center text-sm font-bold mb-3 tracking-widest uppercase text-primary">
-        {monthNames[month]} {year}
-      </div>
+      <div className="text-center text-sm font-bold mb-3 tracking-widest uppercase text-primary">{monthNames[month]} {year}</div>
       <div className="grid grid-cols-7 gap-1 text-center text-xs">
-        {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => (
-          <div key={d} className="font-bold py-1 text-muted-foreground">{d}</div>
-        ))}
+        {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => <div key={d} className="font-bold py-1 text-muted-foreground">{d}</div>)}
         {cells.map((d, i) => (
-          <div key={i} className={`py-1 rounded transition-colors ${d === today ? "bg-primary text-primary-foreground font-bold" : d ? "text-foreground" : ""}`}>
-            {d || ""}
-          </div>
+          <div key={i} className={`py-1 rounded ${d === today ? "bg-primary text-primary-foreground font-bold" : d ? "text-foreground" : ""}`}>{d || ""}</div>
         ))}
       </div>
     </div>
@@ -486,8 +704,7 @@ function PerpetualCalendarGrid({ date }: { date: Date }) {
 
 // ─── EQUATION OF TIME CHART ───────────────────────────────────────────────────
 function EquationOfTimeChart({ currentEoT, dayOfYear }: { currentEoT: number; dayOfYear: number }) {
-  const W = 280, H = 90;
-  const year = new Date().getFullYear();
+  const W = 280, H = 90, year = new Date().getFullYear();
   const points = Array.from({ length: 365 }, (_, i) => equationOfTime(new Date(year, 0, i + 1)));
   const min = Math.min(...points), max = Math.max(...points), range = max - min || 1;
   const pts = points.map((v, i) => `${(i / 364) * W},${H - ((v - min) / range) * (H - 10) - 5}`).join(" ");
@@ -512,10 +729,10 @@ function SeasonalWheel({ date }: { date: Date }) {
   const angle = (dayOfYear / totalDays) * 360 - 90;
   const size = 170, cx = size / 2, cy = size / 2, r = 65, rInner = 38;
   const seasons = [
-    { name: "Spring", color: "hsl(var(--success) / 0.5)", start: 79, end: 172 },
-    { name: "Summer", color: "hsl(var(--warning) / 0.5)", start: 172, end: 264 },
+    { name: "Spring", color: "hsl(var(--success, 142 76% 36%) / 0.4)", start: 79, end: 172 },
+    { name: "Summer", color: "hsl(var(--warning, 48 96% 53%) / 0.4)", start: 172, end: 264 },
     { name: "Autumn", color: "hsl(var(--accent) / 0.4)", start: 264, end: 355 },
-    { name: "Winter", color: "hsl(var(--info) / 0.4)", start: 355, end: 365 + 79 },
+    { name: "Winter", color: "hsl(var(--primary) / 0.2)", start: 355, end: 365 + 79 },
   ];
   const arcPath = (startDay: number, endDay: number) => {
     const a1 = toRad((startDay / totalDays) * 360 - 90);
@@ -538,8 +755,7 @@ function SeasonalWheel({ date }: { date: Date }) {
       {[79, 172, 264, 355].map((day, i) => {
         const a = toRad((day / totalDays) * 360 - 90);
         const labels = ["🌸", "☀️", "🍂", "❄️"];
-        const x = cx + (r + 18) * Math.cos(a);
-        const y = cy + (r + 18) * Math.sin(a);
+        const x = cx + (r + 18) * Math.cos(a), y = cy + (r + 18) * Math.sin(a);
         return <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle" fontSize="12">{labels[i]}</text>;
       })}
       <line x1={cx} y1={cy} x2={handX} y2={handY} stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" />
@@ -556,8 +772,9 @@ export default function WatchShowcase() {
   const [location, setLocation] = useState<GeoLocation>({ lat: 40.7128, lng: -74.006, name: "New York (default)" });
   const [showGeoDialog, setShowGeoDialog] = useState(false);
   const [geoGranted, setGeoGranted] = useState(false);
+  const [showFullStar, setShowFullStar] = useState(false);
+  const [starProjection, setStarProjection] = useState<StarProjection>("equatorial");
 
-  // Tick every second
   useEffect(() => {
     const timer = setInterval(() => {
       setNow(new Date());
@@ -566,26 +783,16 @@ export default function WatchShowcase() {
     return () => clearInterval(timer);
   }, []);
 
-  // Show location dialog on first load if geolocation is supported
   useEffect(() => {
-    if (navigator.geolocation && !geoGranted) {
-      setShowGeoDialog(true);
-    }
+    if (navigator.geolocation && !geoGranted) setShowGeoDialog(true);
   }, []);
 
   const handleGeoAllow = useCallback((loc: GeoLocation) => {
-    setLocation(loc);
-    setGeoGranted(true);
-    setShowGeoDialog(false);
+    setLocation(loc); setGeoGranted(true); setShowGeoDialog(false);
   }, []);
+  const handleGeoDeny = useCallback(() => setShowGeoDialog(false), []);
 
-  const handleGeoDeny = useCallback(() => {
-    setShowGeoDialog(false);
-  }, []);
-
-  const requestLocation = () => setShowGeoDialog(true);
-
-  // ─ Computed values ─
+  // Computed
   const moon = moonPhase(now);
   const eot = equationOfTime(now);
   const sid = siderealTime(now, location.lng);
@@ -597,33 +804,42 @@ export default function WatchShowcase() {
   const leap = getLeapYearInfo(now.getFullYear());
   const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
   const totalDays = isLeapYear(now.getFullYear()) ? 366 : 365;
-
+  const pad = (n: number) => n.toString().padStart(2, "0");
   const fmt = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const fmtNum = (n: number, d = 2) => n.toFixed(d);
-  const pad = (n: number) => n.toString().padStart(2, "0");
-
-  const sidH = Math.floor(sid / 15);
-  const sidM = Math.floor((sid % 15) * 4);
-  const sidS = Math.floor(((sid % 15) * 4 % 1) * 60);
-
+  const sidH = Math.floor(sid / 15), sidM = Math.floor((sid % 15) * 4), sidS = Math.floor(((sid % 15) * 4 % 1) * 60);
   const solarTime = new Date(now.getTime() + eot * 60000 + (location.lng / 15) * 3600000 - now.getTimezoneOffset() * 60000);
-
-  const chineseAnimals: Record<string, string> = { Rat:"🐀",Ox:"🐂",Tiger:"🐅",Rabbit:"🐇",Dragon:"🐉",Snake:"🐍",Horse:"🐎",Goat:"🐐",Monkey:"🐒",Rooster:"🐓",Dog:"🐕",Pig:"🐖" };
+  const animalEmojis: Record<string, string> = { Rat:"🐀",Ox:"🐂",Tiger:"🐅",Rabbit:"🐇",Dragon:"🐉",Snake:"🐍",Horse:"🐎",Goat:"🐐",Monkey:"🐒",Rooster:"🐓",Dog:"🐕",Pig:"🐖" };
   const animalList = ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"];
 
   return (
     <Layout>
       {showGeoDialog && <LocationDialog onAllow={handleGeoAllow} onDeny={handleGeoDeny} />}
+      {showFullStar && (
+        <div>
+          <FullStarChart siderealDeg={sid} lat={location.lat} projection={starProjection} onClose={() => setShowFullStar(false)} />
+          <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[60] flex gap-2">
+            <button
+              onClick={() => setStarProjection("equatorial")}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${starProjection === "equatorial" ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:text-primary"}`}
+            >Equatorial</button>
+            <button
+              onClick={() => setStarProjection("horizon")}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${starProjection === "horizon" ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:text-primary"}`}
+            >Horizon</button>
+          </div>
+        </div>
+      )}
 
       <div className="min-h-screen pb-24 bg-background text-foreground">
-        {/* ── STICKY HEADER ── */}
+        {/* Sticky header */}
         <div className="sticky top-0 z-10 px-4 py-3 flex items-center justify-between bg-background/95 border-b border-border backdrop-blur-sm">
           <div>
             <div className="text-xs tracking-widest uppercase text-muted-foreground">Grand Complication</div>
             <div className="text-base font-bold text-primary">Astronomical Dashboard</div>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={requestLocation} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-lg border border-border hover:border-primary">
+            <button onClick={() => setShowGeoDialog(true)} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-lg border border-border hover:border-primary">
               <LocateFixed className="w-3.5 h-3.5" />
               {geoGranted ? "GPS ✓" : "Set Location"}
             </button>
@@ -640,7 +856,7 @@ export default function WatchShowcase() {
 
         <div className="px-4 py-6 space-y-8 max-w-4xl mx-auto">
 
-          {/* Location Bar */}
+          {/* Location bar */}
           <div className="flex flex-wrap gap-3 items-center text-xs text-muted-foreground bg-card border border-border rounded-lg px-3 py-2">
             <MapPin className="w-3.5 h-3.5 text-primary" />
             <span className="text-foreground font-medium">{location.name}</span>
@@ -649,13 +865,25 @@ export default function WatchShowcase() {
             <span className="ml-auto">Day {dayOfYear} / {totalDays}</span>
           </div>
 
+          {/* ── LIVE ANALOG WATCH FACE ── */}
+          <section>
+            <SectionTitle sub="Real-time mechanical watch movement with moon phase subdial">Live Watch Face</SectionTitle>
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <AnalogWatchFace date={now} moonPhaseVal={moon.phase} moonIllumination={moon.illumination} />
+              <div className="grid grid-cols-2 gap-3 flex-1 w-full">
+                <DataCard title="Local Time" value={`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`} icon="🕐" highlight />
+                <DataCard title="Solar Time" value={fmt(solarTime)} icon="☀️" />
+                <DataCard title="Sidereal" value={`${pad(sidH)}h ${pad(sidM)}m ${pad(sidS)}s`} icon="⭐" />
+                <DataCard title="Equation of Time" value={`${eot >= 0 ? "+" : ""}${fmtNum(eot, 1)} min`} icon="⏱" highlight={Math.abs(eot) > 10} />
+              </div>
+            </div>
+          </section>
+
           {/* ── MOON PHASE ── */}
           <section>
             <SectionTitle sub="Live lunar calculation updated every second">Moon Phase</SectionTitle>
             <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="flex-shrink-0">
-                <MoonPhaseSVG phase={moon.phase} illumination={moon.illumination} />
-              </div>
+              <div className="flex-shrink-0"><MoonPhaseSVG phase={moon.phase} illumination={moon.illumination} /></div>
               <div className="grid grid-cols-2 gap-3 flex-1 w-full">
                 <DataCard title="Phase" value={moon.name} icon="🌙" highlight />
                 <DataCard title="Illumination" value={`${(moon.illumination * 100).toFixed(1)}%`} icon="✨" />
@@ -680,9 +908,7 @@ export default function WatchShowcase() {
           <section>
             <SectionTitle sub="Self-correcting mechanical calendar">Gregorian Perpetual Calendar</SectionTitle>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-xl p-4 bg-card border border-border">
-                <PerpetualCalendarGrid date={now} />
-              </div>
+              <div className="rounded-xl p-4 bg-card border border-border"><PerpetualCalendarGrid date={now} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <DataCard title="Day of Week" value={now.toLocaleDateString(undefined, { weekday: "long" })} />
                 <DataCard title="Day of Year" value={`#${dayOfYear}`} />
@@ -697,160 +923,141 @@ export default function WatchShowcase() {
           {/* ── CHINESE LUNISOLAR CALENDAR ── */}
           <section>
             <SectionTitle sub="Traditional Chinese calendar with zodiac animals">Chinese Lunisolar Calendar</SectionTitle>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-              <DataCard title="Chinese Year" value={chinese.year.toString()} icon="🏮" />
-              <DataCard title="Zodiac Animal" value={`${chineseAnimals[chinese.animal] || "🐲"} ${chinese.animal}`} highlight />
-              <DataCard title="Element" value={chinese.element} icon="☯️" />
-              <DataCard title="Lunar Month" value={chinese.monthName} sub={`Day ${chinese.dayNum}`} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+              <DataCard title="Lunar Month" value={chinese.monthName} icon="📅" />
+              <DataCard title="Lunar Day" value={`Day ${chinese.dayNum}`} />
+              <DataCard title="Zodiac Animal" value={`${animalEmojis[chinese.animal] || ""} ${chinese.animal}`} icon="🐲" highlight />
+              <DataCard title="Element" value={chinese.element} icon="🔥" />
+              <DataCard title="Lunar Year" value={`${chinese.year + 1900}`} />
+              <DataCard title="Cycle" value={`${((now.getFullYear() - 2020) % 60 + 60) % 60 + 1}/60`} />
             </div>
-            <div className="rounded-xl border bg-card border-border p-4">
-              <div className="text-xs mb-3 tracking-widest uppercase text-muted-foreground">12-Year Zodiac Cycle</div>
-              <div className="grid grid-cols-6 sm:grid-cols-12 gap-2">
+            <div className="rounded-xl p-4 bg-card border border-border">
+              <div className="text-xs uppercase tracking-widest mb-3 text-muted-foreground">12-Year Animal Cycle</div>
+              <div className="grid grid-cols-6 gap-2">
                 {animalList.map((animal, i) => {
-                  const active = animal === chinese.animal;
+                  const isCurrentAnimal = animal === chinese.animal;
                   return (
-                    <div key={animal} className={`flex flex-col items-center gap-1 p-1 rounded border transition-colors ${active ? "bg-primary/10 border-primary/40" : "border-transparent"}`}>
-                      <span className="text-lg">{chineseAnimals[animal]}</span>
-                      <span className={`text-xs hidden sm:block ${active ? "text-primary" : "text-muted-foreground"}`}>{animal}</span>
+                    <div key={animal} className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-center transition-colors ${isCurrentAnimal ? "bg-primary/10 border-primary/40" : "bg-muted/50 border-border"}`}>
+                      <span className="text-base">{animalEmojis[animal]}</span>
+                      <span className={`text-[10px] font-medium ${isCurrentAnimal ? "text-primary" : "text-muted-foreground"}`}>{animal}</span>
                     </div>
                   );
                 })}
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-3">
-              <DataCard title="Leap Cycle" value="19 years" sub="Metonic cycle" icon="🔄" />
-              <DataCard title="Lunar Year" value="354/355 days" sub="Per lunar year" icon="📆" />
-              <DataCard title="Intercalation" value="~7/19 years" sub="Leap months added" icon="➕" />
-            </div>
           </section>
 
-          {/* ── ZODIAC DISPLAY ── */}
+          {/* ── SUNRISE / SUNSET & SUN POSITION ── */}
           <section>
-            <SectionTitle sub="Western astronomical zodiac">Zodiac Display</SectionTitle>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="rounded-xl border bg-card border-border p-6 flex flex-col items-center justify-center flex-shrink-0 min-w-[140px]">
-                <div className="text-5xl mb-2">{zodiac.symbol}</div>
-                <div className="text-lg font-bold text-primary">{zodiac.sign}</div>
-                <div className="text-xs mt-1 text-muted-foreground">{zodiac.element}</div>
-                <div className="text-xs mt-0.5 text-muted-foreground">From {zodiac.startDate}</div>
-              </div>
-              <div className="flex-1 grid grid-cols-6 gap-1.5">
-                {["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"].map((sym, i) => {
-                  const signs = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
-                  const active = signs[i] === zodiac.sign;
-                  return (
-                    <div key={i} className={`rounded-lg p-2 text-center border transition-colors ${active ? "bg-primary/10 border-primary/40" : "bg-muted border-border"}`}>
-                      <div className={`text-xl ${active ? "text-primary" : "text-muted-foreground"}`}>{sym}</div>
-                      <div className={`text-xs mt-0.5 hidden sm:block ${active ? "text-primary" : "text-muted-foreground"}`}>{signs[i]}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="mt-3">
-              <DataCard title="Sun's Position" value={`${fmtNum(sun.declination, 2)}° Declination`}
-                sub={`Right Ascension: ${fmtNum(sun.rightAscension, 2)}°`} icon="☀️" />
-            </div>
-          </section>
-
-          {/* ── SUNRISE & SUNSET ── */}
-          <section>
-            <SectionTitle sub={`Calculated for ${location.name} — updates live with GPS`}>Sunrise & Sunset</SectionTitle>
-            <div className="rounded-xl border bg-card border-border p-4 mb-3">
-              <svg width="100%" height="100" viewBox="0 0 300 100" preserveAspectRatio="xMidYMid meet">
-                <defs>
-                  <linearGradient id="skyDay" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--primary) / 0.3)" />
-                    <stop offset="100%" stopColor="hsl(var(--background))" />
-                  </linearGradient>
-                </defs>
-                <rect width="300" height="100" fill="url(#skyDay)" />
-                <line x1={0} y1={80} x2={300} y2={80} stroke="hsl(var(--border))" strokeWidth="1" />
-                <path d="M 20 80 Q 150 10 280 80" fill="none" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1" strokeDasharray="4 3" />
-                {(() => {
-                  const totalMins = (sunset.getTime() - sunrise.getTime()) / 60000;
-                  const elapsedMins = (now.getTime() - sunrise.getTime()) / 60000;
-                  const t = Math.max(0, Math.min(1, elapsedMins / totalMins));
-                  const x = 20 + t * 260;
-                  const arc = -70 * Math.sin(t * Math.PI);
-                  const y = 80 + arc;
-                  return t >= 0 && t <= 1 ? (
-                    <g>
-                      <circle cx={x} cy={y} r={10} fill="hsl(var(--primary) / 0.2)" />
-                      <circle cx={x} cy={y} r={6} fill="hsl(var(--primary))" />
-                      <circle cx={x} cy={y} r={3} fill="hsl(var(--primary-foreground))" />
-                    </g>
-                  ) : null;
-                })()}
-                <text x={20} y={96} fill="hsl(var(--primary))" fontSize="9" textAnchor="middle">🌅 {fmt(sunrise)}</text>
-                <text x={280} y={96} fill="hsl(var(--muted-foreground))" fontSize="9" textAnchor="middle">🌇 {fmt(sunset)}</text>
-                <text x={150} y={18} fill="hsl(var(--foreground))" fontSize="9" textAnchor="middle">Alt: {fmtNum(sun.altitude, 1)}° Az: {fmtNum(sun.azimuth, 1)}°</text>
-              </svg>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <SectionTitle sub={`Calculated for ${location.name}`}>Sunrise / Sunset & Solar Position</SectionTitle>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               <DataCard title="Sunrise" value={fmt(sunrise)} icon="🌅" highlight />
               <DataCard title="Sunset" value={fmt(sunset)} icon="🌇" highlight />
-              <DataCard title="Day Length" value={`${fmtNum(daylength, 2)}h`} icon="⏱️" />
-              <DataCard title="Solar Altitude" value={`${fmtNum(sun.altitude, 2)}°`} sub={sun.altitude > 0 ? "Above horizon" : "Below horizon"} />
+              <DataCard title="Day Length" value={`${fmtNum(daylength, 1)}h`} icon="⏳" />
+              <DataCard title="Sun Altitude" value={`${fmtNum(sun.altitude, 1)}°`} icon={sun.altitude > 0 ? "☀️" : "🌙"} highlight={sun.altitude > 0} />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <DataCard title="Azimuth" value={`${fmtNum(sun.azimuth, 1)}°`} sub={["N","NE","E","SE","S","SW","W","NW"][Math.round(sun.azimuth/45)%8]} />
+              <DataCard title="Declination" value={`${fmtNum(sun.declination, 2)}°`} />
+              <DataCard title="Solar Noon" value={fmt(new Date(now.setHours(12, 0, 0, 0)))} />
+            </div>
+            {/* Day progress bar */}
+            <div className="mt-4 bg-card border border-border rounded-xl p-4">
+              <div className="flex justify-between text-xs text-muted-foreground mb-2">
+                <span>🌅 {fmt(sunrise)}</span>
+                <span className="text-foreground font-medium">Day Progress</span>
+                <span>🌇 {fmt(sunset)}</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                <div className="h-3 rounded-full bg-gradient-to-r from-primary/60 via-primary to-primary/60 transition-all duration-1000"
+                  style={{ width: `${Math.max(0, Math.min(100, ((now.getTime() - sunrise.getTime()) / (sunset.getTime() - sunrise.getTime())) * 100))}%` }} />
+              </div>
+              {sun.altitude > 0 && (
+                <div className="text-center text-xs text-primary mt-1">☀️ Sun is above horizon (+{fmtNum(sun.altitude, 1)}°)</div>
+              )}
             </div>
           </section>
 
           {/* ── EQUATION OF TIME ── */}
           <section>
-            <SectionTitle sub="Difference between civil & apparent solar time">Equation of Time</SectionTitle>
-            <div className="rounded-xl border bg-card border-border p-4 mb-3">
-              <EquationOfTimeChart currentEoT={eot} dayOfYear={dayOfYear} />
+            <SectionTitle sub="Difference between apparent solar time and mean solar time">Equation of Time</SectionTitle>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <DataCard title="EoT Correction" value={`${eot >= 0 ? "+" : ""}${fmtNum(eot, 2)} min`} icon="⏱" highlight={Math.abs(eot) > 10} />
+              <DataCard title="Solar Time" value={fmt(solarTime)} icon="☀️" />
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <DataCard title="EoT Value" value={`${eot >= 0 ? "+" : ""}${fmtNum(eot, 2)} min`}
-                sub="Solar vs clock" icon="⏰" highlight />
-              <DataCard title="Apparent Solar Time" value={solarTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} icon="☀️" />
-              <DataCard title="Civil Time" value={now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} icon="🕐" />
+            <div className="rounded-xl p-4 bg-card border border-border">
+              <div className="text-xs uppercase tracking-widest mb-2 text-muted-foreground">Annual Equation of Time (minutes)</div>
+              <EquationOfTimeChart currentEoT={eot} dayOfYear={dayOfYear} />
             </div>
           </section>
 
           {/* ── SIDEREAL TIME ── */}
           <section>
-            <SectionTitle sub="Star time — Earth's rotation relative to distant stars">Sidereal Time</SectionTitle>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-xl border bg-card border-border p-4">
-                <div className="text-xs mb-2 uppercase tracking-widest text-muted-foreground">Local Sidereal Time</div>
-                <div className="text-4xl font-mono font-bold tabular-nums text-primary">
-                  {pad(sidH)}h {pad(sidM)}m {pad(sidS)}s
-                </div>
-                <div className="text-xs mt-2 text-muted-foreground">= {fmtNum(sid, 4)}°</div>
-                <div className="text-xs mt-1 text-muted-foreground">
-                  Sidereal day = 23h 56m 4.09s — 3m 56s shorter than solar day
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <DataCard title="GMST" value={`${fmtNum(siderealTime(now, 0), 2)}°`} sub="Greenwich" />
-                <DataCard title="LMST" value={`${fmtNum(sid, 2)}°`} sub="Local" highlight />
-                <DataCard title="Solar vs Sidereal" value="+3m 56s/day" sub="Sidereal shorter" />
-                <DataCard title="RA on Meridian" value={`${pad(sidH)}h ${pad(sidM)}m`} sub="Right Ascension" />
+            <SectionTitle sub="Local apparent sidereal time — the sky's clock">Sidereal Time</SectionTitle>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <DataCard title="LST" value={`${pad(sidH)}h ${pad(sidM)}m ${pad(sidS)}s`} icon="⭐" highlight />
+              <DataCard title="GMST" value={`${pad(Math.floor(siderealTime(now, 0) / 15))}h`} />
+              <DataCard title="Sidereal Angle" value={`${fmtNum(sid, 2)}°`} />
+              <DataCard title="vs Solar Day" value="23h 56m 4s" sub="Sidereal day length" />
+            </div>
+          </section>
+
+          {/* ── STAR CHART & CONSTELLATIONS ── */}
+          <section>
+            <SectionTitle sub="Live sky chart synchronized to local sidereal time with 88 constellations">Sky Chart & Constellations</SectionTitle>
+            <div className="flex gap-2 mb-3">
+              <button onClick={() => { setStarProjection("equatorial"); setShowFullStar(true); }}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border bg-card border-border text-muted-foreground hover:text-primary hover:border-primary transition-colors">
+                <Expand className="w-3.5 h-3.5" /> Equatorial Fullscreen
+              </button>
+              <button onClick={() => { setStarProjection("horizon"); setShowFullStar(true); }}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border bg-card border-border text-muted-foreground hover:text-primary hover:border-primary transition-colors">
+                <Expand className="w-3.5 h-3.5" /> Horizon Fullscreen
+              </button>
+            </div>
+            <StarChartSVG siderealDeg={sid} lat={location.lat} onExpand={() => setShowFullStar(true)} />
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <DataCard title="Sidereal Time" value={`${pad(sidH)}h ${pad(sidM)}m`} icon="🌌" />
+              <DataCard title="Stars Charted" value={`${STARS.length}`} sub={`${CONSTELLATIONS.length} constellations`} />
+            </div>
+          </section>
+
+          {/* ── SEASONS & EQUINOXES ── */}
+          <section>
+            <SectionTitle sub="Earth's orbital position and seasonal transitions">Seasons & Equinoxes</SectionTitle>
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <SeasonalWheel date={now} />
+              <div className="grid grid-cols-2 gap-3 flex-1 w-full">
+                <DataCard title="Season" value={`${season.icon} ${season.name}`} highlight />
+                <DataCard title="Progress" value={`${(season.progress * 100).toFixed(1)}%`} />
+                <DataCard title="Vernal Equinox" value="Mar 20" icon="🌸" />
+                <DataCard title="Summer Solstice" value="Jun 21" icon="☀️" />
+                <DataCard title="Autumnal Equinox" value="Sep 23" icon="🍂" />
+                <DataCard title="Winter Solstice" value="Dec 21" icon="❄️" />
               </div>
             </div>
           </section>
 
-          {/* ── STAR CHART / SKY CHART ── */}
+          {/* ── ZODIAC ── */}
           <section>
-            <SectionTitle sub="Live star positions rotating with local sidereal time">Star Chart & Sky Map</SectionTitle>
-            <div className="flex flex-col sm:flex-row gap-4 items-start">
-              <div className="rounded-xl border bg-card border-border p-3 flex-shrink-0">
-                <StarChartSVG siderealDeg={sid} lat={location.lat} />
-                <div className="text-center text-xs mt-2 text-muted-foreground">Rotating with LST • {fmtNum(sid, 1)}°</div>
-              </div>
-              <div className="flex-1 space-y-2">
-                <div className="text-xs uppercase tracking-widest mb-2 text-muted-foreground">Brightest Stars</div>
-                {STARS.slice(0, 10).map(star => {
-                  const isVisible = star.dec + 90 > (90 - location.lat);
+            <SectionTitle sub="Western tropical zodiac based on solar position">Western Zodiac</SectionTitle>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+              <DataCard title="Sun Sign" value={`${zodiac.symbol} ${zodiac.sign}`} icon="♈" highlight />
+              <DataCard title="Element" value={zodiac.element} />
+              <DataCard title="Declination" value={`${fmtNum(sun.declination, 2)}°`} sub="Solar" />
+            </div>
+            <div className="rounded-xl p-4 bg-card border border-border overflow-x-auto">
+              <div className="flex gap-2 min-w-max">
+                {[
+                  ["♈","Aries"],["♉","Taurus"],["♊","Gemini"],["♋","Cancer"],
+                  ["♌","Leo"],["♍","Virgo"],["♎","Libra"],["♏","Scorpio"],
+                  ["♐","Sagittarius"],["♑","Capricorn"],["♒","Aquarius"],["♓","Pisces"]
+                ].map(([sym, name]) => {
+                  const isActive = name === zodiac.sign;
                   return (
-                    <div key={star.name} className="flex items-center justify-between text-xs py-1.5 border-b border-border">
-                      <span className="text-foreground font-medium">★ {star.name}</span>
-                      <span className="text-muted-foreground">Mag {star.mag.toFixed(2)}</span>
-                      <span className={isVisible ? "text-success" : "text-destructive"}>
-                        {isVisible ? "Visible" : "Below horizon"}
-                      </span>
+                    <div key={name} className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg border min-w-[52px] ${isActive ? "bg-primary/10 border-primary/40" : "border-border"}`}>
+                      <span className={`text-lg ${isActive ? "text-primary" : "text-muted-foreground"}`}>{sym}</span>
+                      <span className={`text-[9px] font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}>{name}</span>
                     </div>
                   );
                 })}
@@ -858,106 +1065,46 @@ export default function WatchShowcase() {
             </div>
           </section>
 
-          {/* ── SEASONS & EQUINOXES ── */}
+          {/* ── LEAP CYCLES & LUNAR MONTHS ── */}
           <section>
-            <SectionTitle sub="Earth's orbital position and astronomical seasons">Seasons & Equinoxes</SectionTitle>
-            <div className="flex flex-col sm:flex-row gap-4 items-center">
-              <SeasonalWheel date={now} />
-              <div className="flex-1 grid grid-cols-2 gap-3">
-                <DataCard title="Current Season" value={`${season.icon} ${season.name}`} highlight />
-                <DataCard title="Season Progress" value={`${(season.progress * 100).toFixed(1)}%`} />
-                <DataCard title="Spring Equinox" value="~Mar 20" icon="🌸" />
-                <DataCard title="Summer Solstice" value="~Jun 21" icon="☀️" />
-                <DataCard title="Autumn Equinox" value="~Sep 23" icon="🍂" />
-                <DataCard title="Winter Solstice" value="~Dec 21" icon="❄️" />
-              </div>
-            </div>
-            <div className="mt-4 rounded-xl border bg-card border-border p-4">
-              <div className="text-xs mb-2 uppercase tracking-widest text-muted-foreground">Solar Declination (−23.5° to +23.5°)</div>
-              <div className="relative h-5 rounded-full overflow-hidden bg-muted">
-                <div className="absolute inset-y-0 left-1/2 w-px bg-border" />
-                <div className="absolute w-3 h-3 rounded-full bg-primary top-1/2 -translate-y-1/2 -translate-x-1/2 shadow-lg"
-                  style={{ left: `${((sun.declination + 23.5) / 47) * 100}%` }} />
-              </div>
-              <div className="flex justify-between text-xs mt-1 text-muted-foreground">
-                <span>−23.5° Winter Solstice</span>
-                <span className="font-bold text-primary">{fmtNum(sun.declination, 2)}°</span>
-                <span>+23.5° Summer Solstice</span>
-              </div>
+            <SectionTitle sub="Gregorian leap cycle and lunar month tracking">Leap Cycles & Lunar Months</SectionTitle>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <DataCard title="Leap Year" value={leap.current ? "✓ Yes" : "No"} highlight={leap.current} icon="📅" />
+              <DataCard title="Last Leap" value={leap.last.toString()} />
+              <DataCard title="Next Leap" value={leap.next.toString()} />
+              <DataCard title="Lunar Month" value="29.53 days" icon="🌙" />
+              <DataCard title="Lunar Phase" value={`${(moon.phase * 29.53).toFixed(1)} / 29.53`} />
+              <DataCard title="Metonic Cycle" value="19 years" sub="235 lunar months" />
             </div>
           </section>
 
-          {/* ── SOLAR TIME ── */}
+          {/* ── WESTMINSTER CHIME ── */}
           <section>
-            <SectionTitle sub="Apparent vs mean solar time">Solar Time vs Civil Time</SectionTitle>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-xl border bg-card border-border p-4">
-                <div className="text-xs mb-1 uppercase tracking-widest text-muted-foreground">Apparent Solar Time</div>
-                <div className="text-3xl font-mono font-bold text-primary">
-                  {solarTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                </div>
-                <div className="text-xs mt-2 text-muted-foreground">Sun's actual position + longitude correction</div>
-              </div>
-              <div className="rounded-xl border bg-card border-border p-4">
-                <div className="text-xs mb-1 uppercase tracking-widest text-muted-foreground">Mean Civil Time</div>
-                <div className="text-3xl font-mono font-bold text-foreground">
-                  {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                </div>
-                <div className="text-xs mt-2 text-muted-foreground">Standard timezone time</div>
-              </div>
-            </div>
-            <div className="mt-3">
-              <DataCard title="Time Difference" value={`${eot >= 0 ? "+" : ""}${fmtNum(eot, 2)} minutes`}
-                sub="Solar time offset from clock" icon="⚖️" />
-            </div>
-          </section>
-
-          {/* ── TOURBILLON REGULATOR ── */}
-          <section>
-            <SectionTitle sub="60 rpm precision regulating mechanism — live animation">Tourbillon Regulator</SectionTitle>
-            <div className="flex flex-col sm:flex-row gap-6 items-center">
-              <div className="flex flex-col items-center gap-2">
-                <TourbillonSVG angle={tourbillonAngle} />
-                <div className="text-xs text-center text-muted-foreground">Live • 60 rpm • Gravity compensation</div>
-              </div>
-              <div className="flex-1 grid grid-cols-2 gap-3">
-                <DataCard title="Rotation Speed" value="60 rpm" sub="1 rev/second" icon="⚙️" />
-                <DataCard title="Beat Rate" value="21,600 vph" sub="3 Hz" icon="💓" highlight />
-                <DataCard title="Cage Weight" value="~0.3g" sub="Featherlight" icon="⚖️" />
-                <DataCard title="Escapement" value="Swiss Lever" sub="Traditional" />
-                <DataCard title="Power Reserve" value="~65 hours" sub="Hand-wound" icon="🔋" />
-                <DataCard title="Pivot Count" value="72" sub="Pivot points in cage" icon="🔩" />
-              </div>
-            </div>
-          </section>
-
-          {/* ── WESTMINSTER MINUTE REPEATER ── */}
-          <section>
-            <SectionTitle sub="4-gong chiming — strikes hours, quarters, minutes">Westminster Minute Repeater</SectionTitle>
-            <div className="rounded-xl border bg-card border-border p-6">
+            <SectionTitle sub="4-gong Westminster chime mechanism — E♭ C D G">Westminster Minute Repeater</SectionTitle>
+            <div className="rounded-xl p-6 bg-card border border-border">
               <WestminsterChime minute={now.getMinutes()} second={now.getSeconds()} />
-              <Divider />
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-                <DataCard title="Current Hour" value={`${pad(now.getHours() % 12 || 12)}h`} icon="🔔" />
-                <DataCard title="Quarter" value={`Q${Math.floor(now.getMinutes() / 15) + 1}`} sub="of 4 per hour" />
-                <DataCard title="Minutes Past" value={`${now.getMinutes() % 15}m`} sub="After quarter" />
-                <DataCard title="Chime" value="E♭-C-D-G" sub="Westminster pattern" highlight />
+              <div className="mt-4 text-center text-xs text-muted-foreground">
+                Current time: {pad(now.getHours())}:{pad(now.getMinutes())} · Chime rings every 15 minutes
               </div>
-              <p className="mt-4 text-xs text-muted-foreground leading-relaxed">
-                The Westminster chime uses 4 notes (E♭, C, D, G). Each quarter plays a distinct pattern building to the full 16-note sequence at the top of the hour, followed by the hour count struck on the low-G gong.
-              </p>
             </div>
           </section>
 
-          {/* ── FOOTER ── */}
-          <div className="text-center py-8 border-t border-border">
-            <p className="text-xs text-muted-foreground italic tracking-widest">
-              "A masterpiece of time, astronomy, and human craftsmanship."
-            </p>
-            <p className="text-xs text-muted-foreground mt-2">
-              Vacheron Constantin Les Cabinotiers — The Berkley Grand Complication
-            </p>
-          </div>
+          {/* ── TOURBILLON ── */}
+          <section>
+            <SectionTitle sub="Precision regulating mechanism — 1 revolution per minute">Tourbillon Regulator</SectionTitle>
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="flex-shrink-0">
+                <TourbillonSVG angle={tourbillonAngle} />
+              </div>
+              <div className="grid grid-cols-2 gap-3 flex-1 w-full">
+                <DataCard title="Rotation" value={`${tourbillonAngle.toFixed(0)}°`} icon="⚙️" highlight />
+                <DataCard title="Period" value="60 seconds" sub="1 rpm" />
+                <DataCard title="Function" value="Anti-gravity" sub="Compensates rate variation" />
+                <DataCard title="Escapement" value="Swiss lever" sub="Traditional mechanism" />
+              </div>
+            </div>
+          </section>
+
         </div>
       </div>
     </Layout>

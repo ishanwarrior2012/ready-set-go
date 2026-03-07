@@ -36,6 +36,7 @@ const SpaceTracker = lazy(() => import("./pages/SpaceTracker"));
 const FireMap = lazy(() => import("./pages/FireMap"));
 const TrafficMonitor = lazy(() => import("./pages/TrafficMonitor"));
 const WatchShowcase = lazy(() => import("./pages/WatchShowcase"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
 
 const queryClient = new QueryClient({
   defaultOptions: {

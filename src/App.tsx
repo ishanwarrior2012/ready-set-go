@@ -85,6 +85,9 @@ const App = () => {
                       {/* Auth page - only for guests */}
                       <Route path="/auth" element={<GuestGuard><AuthPage /></GuestGuard>} />
                       
+                      {/* Onboarding - for new users after signup */}
+                      <Route path="/onboarding" element={<AuthGuard><Onboarding /></AuthGuard>} />
+
                       {/* Protected routes - require authentication */}
                       <Route path="/" element={<AuthGuard><Dashboard /></AuthGuard>} />
                       <Route path="/flights" element={<AuthGuard><Flights /></AuthGuard>} />
@@ -105,8 +108,8 @@ const App = () => {
                       <Route path="/news" element={<AuthGuard><News /></AuthGuard>} />
                       <Route path="/space" element={<AuthGuard><SpaceTracker /></AuthGuard>} />
                       <Route path="/fires" element={<AuthGuard><FireMap /></AuthGuard>} />
-                       <Route path="/traffic" element={<AuthGuard><TrafficMonitor /></AuthGuard>} />
-                       <Route path="/watch" element={<AuthGuard><WatchShowcase /></AuthGuard>} />
+                      <Route path="/traffic" element={<AuthGuard><TrafficMonitor /></AuthGuard>} />
+                      <Route path="/watch" element={<AuthGuard><WatchShowcase /></AuthGuard>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>

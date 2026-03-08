@@ -217,55 +217,8 @@ const CONSTELLATIONS: { name: string; lines: number[][]; center: [number, number
   { name: "Centaurus", lines: [[30,25],[25,37]], center: [212, -55] },
 ];
 
-// ─── GEOLOCATION DIALOG ───────────────────────────────────────────────────────
+// ─── GeoLocation type (kept for internal use) ──────────────────────────────
 interface GeoLocation { lat: number; lng: number; name: string }
-
-function LocationDialog({ onAllow, onDeny }: { onAllow: (loc: GeoLocation) => void; onDeny: () => void }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleAllow = () => {
-    setLoading(true); setError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { setLoading(false); onAllow({ lat: pos.coords.latitude, lng: pos.coords.longitude, name: "Your Location" }); },
-      (err) => { setLoading(false); setError(err.code === 1 ? "Permission denied by browser." : "Unable to retrieve your location."); },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "hsl(var(--background) / 0.85)", backdropFilter: "blur(8px)" }}>
-      <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-fade-in">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <LocateFixed className="w-6 h-6 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-foreground font-semibold text-base">Use Your Location</h2>
-            <p className="text-muted-foreground text-xs">For accurate astronomical data</p>
-          </div>
-        </div>
-        <p className="text-muted-foreground text-sm mb-4 leading-relaxed">Allow access to your GPS for precise:</p>
-        <ul className="space-y-1 mb-5">
-          {["Sunrise & Sunset times","Solar altitude & azimuth","Star visibility from your horizon","Sidereal time correction"].map(item => (
-            <li key={item} className="flex items-center gap-2 text-sm text-foreground">
-              <span className="text-primary">✓</span> {item}
-            </li>
-          ))}
-        </ul>
-        {error && <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs">{error}</div>}
-        <div className="flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={onDeny} disabled={loading}><X className="w-4 h-4 mr-1" /> Default</Button>
-          <Button className="flex-1" onClick={handleAllow} disabled={loading}>
-            {loading ? <RefreshCw className="w-4 h-4 mr-1 animate-spin" /> : <MapPin className="w-4 h-4 mr-1" />}
-            {loading ? "Locating…" : "Allow GPS"}
-          </Button>
-        </div>
-        <p className="text-muted-foreground text-xs text-center mt-3">Default: New York (40.71°N, 74.01°W)</p>
-      </div>
-    </div>
-  );
-}
 
 // ─── SHARED UI ───────────────────────────────────────────────────────────────
 function SectionTitle({ children, sub }: { children: React.ReactNode; sub?: string }) {

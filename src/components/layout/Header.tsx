@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { LocationPicker } from "@/components/location/LocationPicker";
 
 interface HeaderProps {
   onMenuClick: () => void;

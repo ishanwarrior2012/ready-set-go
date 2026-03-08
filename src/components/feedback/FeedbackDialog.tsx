@@ -289,14 +289,22 @@ export function FeedbackDialog({ open, onClose, defaultTab = "bug" }: FeedbackDi
             <div className="space-y-3">
               <Label className="text-sm">How likely are you to recommend SafeTrack? (0-10)</Label>
               <div className="grid grid-cols-11 gap-1">
-                {Array.from({ length: 11 }, (_, i) => (
-                  <button key={i} onClick={() => setNpsScore(i)}
-                    className={cn(
-                      "h-8 rounded text-xs font-semibold border transition-all",
-                      npsScore === i ? (i >= 9 ? "bg-emerald-500 text-white border-emerald-500" : i >= 7 ? "bg-yellow-500 text-white border-yellow-500" : "bg-destructive text-white border-destructive") : "border-border hover:border-primary/50"
-                    )}
-                  >{i}</button>
-                ))}
+                {Array.from({ length: 11 }, (_, i) => {
+                  const isSelected = npsScore === i;
+                  const selectedCls = i >= 9
+                    ? "bg-emerald-500 text-primary-foreground border-emerald-500"
+                    : i >= 7
+                    ? "bg-yellow-500 text-primary-foreground border-yellow-500"
+                    : "bg-destructive text-destructive-foreground border-destructive";
+                  return (
+                    <button key={i} onClick={() => setNpsScore(i)}
+                      className={cn(
+                        "h-8 rounded text-xs font-semibold border transition-all",
+                        isSelected ? selectedCls : "border-border hover:border-primary/50"
+                      )}
+                    >{i}</button>
+                  );
+                })}
               </div>
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Not likely</span><span>Very likely</span>

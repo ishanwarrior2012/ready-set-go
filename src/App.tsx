@@ -76,13 +76,14 @@ const App = () => {
         <ThemeProvider>
           <AuthProvider>
             <AppProvider>
-              <TooltipProvider>
-                <OfflineIndicator />
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <Suspense fallback={<LoadingPage />}>
-                    <Routes>
+              <LocationProvider>
+                <TooltipProvider>
+                  <OfflineIndicator />
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <Suspense fallback={<LoadingPage />}>
+                      <Routes>
                       {/* Auth page - only for guests */}
                       <Route path="/auth" element={<GuestGuard><AuthPage /></GuestGuard>} />
                       

@@ -71,6 +71,63 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback_reports: {
+        Row: {
+          admin_notes: string | null
+          category: string | null
+          created_at: string
+          description: string
+          id: string
+          metadata: Json | null
+          page_url: string | null
+          priority: string
+          screenshot_url: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+          votes: number
+        }
+        Insert: {
+          admin_notes?: string | null
+          category?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          metadata?: Json | null
+          page_url?: string | null
+          priority?: string
+          screenshot_url?: string | null
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+          votes?: number
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          page_url?: string | null
+          priority?: string
+          screenshot_url?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+          votes?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -131,6 +188,36 @@ export type Database = {
           display_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      survey_responses: {
+        Row: {
+          created_at: string
+          id: string
+          nps_score: number | null
+          rating: number | null
+          responses: Json | null
+          survey_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nps_score?: number | null
+          rating?: number | null
+          responses?: Json | null
+          survey_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nps_score?: number | null
+          rating?: number | null
+          responses?: Json | null
+          survey_id?: string
+          user_id?: string
         }
         Relationships: []
       }

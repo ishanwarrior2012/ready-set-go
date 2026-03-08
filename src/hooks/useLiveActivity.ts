@@ -131,39 +131,43 @@ async function fetchLiveActivity(): Promise<ActivityItem[]> {
   // Fetch latest world news from GDELT
   try {
     const newsResponse = await fetchWithTimeout(
-      "https://api.gdeltproject.org/api/v2/doc/doc?query=%22breaking%20news%22&mode=ArtList&format=json&maxrecords=8&sort=DateDesc&sourcelang=english",
+      "https://api.gdeltproject.org/api/v2/doc/doc?query=(breaking+news+OR+world+news)&mode=ArtList&format=json&maxrecords=8&sort=DateDesc&sourcelang=english&timespan=6h",
       { timeoutMs: 10000 }
     );
     if (newsResponse.ok) {
       const text = await newsResponse.text();
-      try {
-        const data = JSON.parse(text);
-        const articles = data?.articles?.slice(0, 6) || [];
+      if (!text.trim().startsWith("{")) {
+        // GDELT returned error text, skip
+      } else {
+        try {
+          const data = JSON.parse(text);
+          const articles = data?.articles?.slice(0, 6) || [];
 
-        for (const article of articles) {
-          const publishDate = article.seendate
-            ? new Date(
-                article.seendate.replace(
-                  /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/,
-                  "$1-$2-$3T$4:$5:$6Z"
-                )
-              ).getTime()
-            : Date.now();
+          for (const article of articles) {
+            if (!article.url || !article.title) continue;
+            const publishDate = article.seendate
+              ? new Date(
+                  article.seendate.replace(
+                    /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/,
+                    "$1-$2-$3T$4:$5:$6Z"
+                  )
+                ).getTime()
+              : Date.now();
 
-          activities.push({
-            id: `news-${article.url || Math.random()}`,
-            type: "news",
-            title: (article.title || "Breaking News").slice(0, 80),
-            location: article.sourcecountry || article.domain || "World",
-            time: getRelativeTime(publishDate),
-            timestamp: publishDate,
-            severity: "low",
-            link: article.url,
-          });
+            activities.push({
+              id: `news-${article.url || Math.random()}`,
+              type: "news",
+              title: (article.title || "Breaking News").slice(0, 80),
+              location: article.sourcecountry || article.domain || "World",
+              time: getRelativeTime(publishDate),
+              timestamp: publishDate,
+              severity: "low",
+              link: article.url,
+            });
+          }
+        } catch {
+          logger.error("GDELT returned non-JSON response");
         }
-      } catch {
-        // Response was not valid JSON, skip news
-        logger.error("GDELT returned non-JSON response");
       }
     }
   } catch (error) {

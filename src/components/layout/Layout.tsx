@@ -3,6 +3,7 @@ import { Header } from "./Header";
 import { BottomNavigation } from "./BottomNavigation";
 import { Sidebar } from "./Sidebar";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
+import { FeedbackButton } from "@/components/feedback/FeedbackButton";
 import { usePreferences } from "@/contexts/AppContext";
 
 interface LayoutProps {
@@ -24,6 +25,7 @@ export function Layout({ children, showFab = true }: LayoutProps) {
       </main>
       
       {showFab && <FloatingActionButton />}
+      <FeedbackButton />
       <BottomNavigation />
     </div>
   );

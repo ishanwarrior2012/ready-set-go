@@ -32,6 +32,7 @@ const Notifications = lazy(() => import("./pages/Notifications"));
 const AuthPage = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Admin = lazy(() => import("./pages/Admin"));
+const AdminReports = lazy(() => import("./pages/AdminReports"));
 const News = lazy(() => import("./pages/News"));
 const SpaceTracker = lazy(() => import("./pages/SpaceTracker"));
 const FireMap = lazy(() => import("./pages/FireMap"));

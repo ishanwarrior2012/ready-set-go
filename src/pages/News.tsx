@@ -318,7 +318,7 @@ export default function News() {
             </section>
 
             <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
               Live · Last 18 hours · English · Auto-refreshes every 5 min
             </div>
           </div>

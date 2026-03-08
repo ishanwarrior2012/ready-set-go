@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useGeolocation } from "./useGeolocation";
+import { useLocation } from "@/contexts/LocationContext";
 import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 
 export interface CurrentWeather {

@@ -60,8 +60,8 @@ export function OfflineIndicator() {
       className={cn(
         "fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-2 py-2 px-4 text-sm font-medium transition-all duration-500 safe-top animate-in slide-in-from-top-1",
         isOnline
-          ? "bg-emerald-600 text-white"
-          : "bg-orange-600 text-white"
+          ? "bg-emerald-500 text-primary-foreground"
+          : "bg-destructive text-destructive-foreground"
       )}
     >
       {isOnline ? (

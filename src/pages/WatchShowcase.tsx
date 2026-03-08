@@ -808,7 +808,6 @@ export default function WatchShowcase() {
 
   return (
     <Layout>
-      {showGeoDialog && <LocationDialog onAllow={handleGeoAllow} onDeny={handleGeoDeny} />}
       {showFullStar && (
         <div>
           <FullStarChart siderealDeg={sid} lat={location.lat} projection={starProjection} onClose={() => setShowFullStar(false)} />
@@ -833,10 +832,7 @@ export default function WatchShowcase() {
             <div className="text-base font-bold text-primary">Astronomical Dashboard</div>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => setShowGeoDialog(true)} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-lg border border-border hover:border-primary">
-              <LocateFixed className="w-3.5 h-3.5" />
-              {geoGranted ? "GPS ✓" : "Set Location"}
-            </button>
+            <LocationPicker />
             <div className="text-right">
               <div className="text-xl font-mono font-bold tabular-nums text-primary">
                 {pad(now.getHours())}:{pad(now.getMinutes())}:{pad(now.getSeconds())}
@@ -852,7 +848,6 @@ export default function WatchShowcase() {
 
           {/* Location bar */}
           <div className="flex flex-wrap gap-3 items-center text-xs text-muted-foreground bg-card border border-border rounded-lg px-3 py-2">
-            <MapPin className="w-3.5 h-3.5 text-primary" />
             <span className="text-foreground font-medium">{location.name}</span>
             <span>Lat {fmtNum(location.lat, 4)}°</span>
             <span>Lng {fmtNum(location.lng, 4)}°</span>

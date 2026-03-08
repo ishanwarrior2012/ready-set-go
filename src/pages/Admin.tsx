@@ -18,8 +18,9 @@ import { Separator } from "@/components/ui/separator";
 import {
   Shield, Users, Search, Crown, UserCog, User, Loader2, RefreshCw,
   ChevronDown, Calendar, AtSign, Code, Camera, Briefcase, Star, UserCheck,
-  Trash2, Mail, Info, MapPin, Clock,
+  Trash2, Mail, Info, MessageSquare,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";

@@ -254,7 +254,7 @@ export default function News() {
             <div className="text-xs text-muted-foreground">High Priority</div>
           </Card>
           <Card className="p-3 text-center">
-            <div className={cn("text-2xl font-bold", isFetching ? "text-amber-500" : "text-green-500")}>
+            <div className={cn("text-2xl font-bold", isFetching ? "text-warning" : "text-success")}>
               {isFetching ? "…" : "Live"}
             </div>
             <div className="text-xs text-muted-foreground">Updated {lastUpdated}</div>

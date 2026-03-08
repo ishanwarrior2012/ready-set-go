@@ -77,7 +77,7 @@ export function FeedbackDialog({ open, onClose, defaultTab = "bug" }: FeedbackDi
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("feedback_reports" as any).insert({
+      const { error } = await (supabase as any).from("feedback_reports").insert({
         user_id: user.id,
         type: tab,
         title: title.trim(),

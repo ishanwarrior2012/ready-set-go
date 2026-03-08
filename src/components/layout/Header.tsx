@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { LocationPicker } from "@/components/location/LocationPicker";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -40,13 +41,16 @@ export function Header({ onMenuClick }: HeaderProps) {
           <Menu className="h-5 w-5" />
         </Button>
 
-        {/* Center: Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
-            <div className="h-3 w-3 rounded-full border-2 border-primary-foreground" />
-          </div>
-          <span className="font-heading text-lg font-semibold">SafeTrack</span>
-        </Link>
+        {/* Center: Logo + Location */}
+        <div className="flex items-center gap-1.5">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+              <div className="h-3 w-3 rounded-full border-2 border-primary-foreground" />
+            </div>
+            <span className="font-heading text-lg font-semibold">SafeTrack</span>
+          </Link>
+          <LocationPicker />
+        </div>
 
         {/* Right: Search, Theme, Notifications, and Auth */}
         <div className="flex items-center gap-1">

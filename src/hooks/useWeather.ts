@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useGeolocation } from "./useGeolocation";
+import { useLocation } from "@/contexts/LocationContext";
 import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 
 export interface CurrentWeather {
@@ -204,30 +203,23 @@ function getIconFromCode(code: number): string {
 }
 
 export function useWeather(customLat?: number, customLon?: number) {
-  const geo = useGeolocation({ watch: false });
-  
-  // Request location on mount
-  useEffect(() => {
-    if (customLat === undefined && !geo.latitude) {
-      geo.requestLocation();
-    }
-  }, []);
-  
-  // Default to New Delhi, India when geolocation is unavailable
-  const lat = customLat ?? geo.latitude ?? 28.6139;
-  const lon = customLon ?? geo.longitude ?? 77.2090;
+  const { location, isLocating } = useLocation();
+
+  // Use custom coords if provided, else use global location context
+  const lat = customLat ?? location.lat;
+  const lon = customLon ?? location.lon;
 
   const query = useQuery({
     queryKey: ["weather", lat, lon],
     queryFn: () => fetchWeatherData(lat, lon),
     refetchInterval: 600000, // Refresh every 10 minutes
     staleTime: 300000, // 5 minutes
-    enabled: !geo.loading || customLat !== undefined,
+    enabled: !isLocating || customLat !== undefined,
   });
 
   return {
     ...query,
-    isLocating: geo.loading && customLat === undefined,
+    isLocating: isLocating && customLat === undefined,
   };
 }
 

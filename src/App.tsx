@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AppProvider } from "@/contexts/AppContext";
+import { LocationProvider } from "@/contexts/LocationContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { lazy, Suspense, useEffect } from "react";
 import { LoadingPage } from "@/components/ui/LoadingSpinner";
@@ -75,13 +76,14 @@ const App = () => {
         <ThemeProvider>
           <AuthProvider>
             <AppProvider>
-              <TooltipProvider>
-                <OfflineIndicator />
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <Suspense fallback={<LoadingPage />}>
-                    <Routes>
+              <LocationProvider>
+                <TooltipProvider>
+                  <OfflineIndicator />
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <Suspense fallback={<LoadingPage />}>
+                      <Routes>
                       {/* Auth page - only for guests */}
                       <Route path="/auth" element={<GuestGuard><AuthPage /></GuestGuard>} />
                       
@@ -115,6 +117,7 @@ const App = () => {
                   </Suspense>
                 </BrowserRouter>
               </TooltipProvider>
+              </LocationProvider>
             </AppProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -82,12 +82,12 @@ export default function AdminReports() {
   const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("feedback_reports" as any)
+      const { data, error } = await (supabase as any)
+        .from("feedback_reports")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      setReports((data as FeedbackReport[]) || []);
+      setReports((data as unknown as FeedbackReport[]) || []);
     } catch (err: any) {
       toast.error("Failed to load reports: " + (err.message || "Unknown error"));
     }

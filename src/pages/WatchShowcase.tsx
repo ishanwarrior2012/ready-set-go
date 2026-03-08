@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { MapPin, LocateFixed, X, RefreshCw, Expand, Shrink } from "lucide-react";
+import { Expand, Shrink } from "lucide-react";
+import { useLocation } from "@/contexts/LocationContext";
+import { LocationPicker } from "@/components/location/LocationPicker";
 
 // ─── ASTRONOMICAL CALCULATIONS ───────────────────────────────────────────────
 

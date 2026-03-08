@@ -42,25 +42,25 @@ interface GDELTArticle {
 
 const CATEGORY_QUERIES: Record<Exclude<NewsCategory, "All">, string> = {
   Geopolitics:
-    "geopolitics OR diplomacy OR \"foreign policy\" OR \"United Nations\" OR \"international relations\" OR summit OR treaty OR sanctions OR NATO OR G20",
+    "(geopolitics OR diplomacy OR \"foreign policy\" OR \"United Nations\" OR \"international relations\" OR summit OR treaty OR sanctions OR NATO OR G20)",
   Sports:
-    "cricket OR football OR soccer OR \"world cup\" OR tennis OR Olympics OR basketball OR baseball OR rugby OR championship OR tournament OR \"India cricket\" OR IPL OR FIFA",
+    "(cricket OR football OR soccer OR \"world cup\" OR tennis OR Olympics OR basketball OR baseball OR rugby OR championship OR tournament OR \"India cricket\" OR IPL OR FIFA)",
   "Natural Disasters":
-    "earthquake OR tsunami OR volcano OR hurricane OR typhoon OR cyclone OR flood OR wildfire OR tornado OR eruption OR landslide",
+    "(earthquake OR tsunami OR volcano OR hurricane OR typhoon OR cyclone OR flood OR wildfire OR tornado OR eruption OR landslide)",
   Weather:
-    "heatwave OR blizzard OR \"storm warning\" OR drought OR \"climate change\" OR monsoon OR \"extreme weather\" OR temperature record",
+    "(heatwave OR blizzard OR \"storm warning\" OR drought OR \"climate change\" OR monsoon OR \"extreme weather\" OR \"temperature record\")",
   Technology:
-    "artificial intelligence OR AI OR cybersecurity OR \"data breach\" OR cryptocurrency OR tech OR software OR \"social media\" OR startup OR innovation",
+    "(\"artificial intelligence\" OR AI OR cybersecurity OR \"data breach\" OR cryptocurrency OR tech OR software OR \"social media\" OR startup OR innovation)",
   Health:
-    "pandemic OR outbreak OR virus OR vaccine OR \"public health\" OR WHO OR epidemic OR disease OR medicine OR hospital",
+    "(pandemic OR outbreak OR virus OR vaccine OR \"public health\" OR WHO OR epidemic OR disease OR medicine OR hospital)",
   Environment:
-    "\"climate change\" OR deforestation OR pollution OR \"carbon emissions\" OR \"renewable energy\" OR biodiversity OR coral reef OR plastic OR sustainability",
+    "(\"climate change\" OR deforestation OR pollution OR \"carbon emissions\" OR \"renewable energy\" OR biodiversity OR sustainability OR plastic)",
   Economy:
-    "inflation OR recession OR \"stock market\" OR GDP OR \"interest rates\" OR unemployment OR trade OR \"federal reserve\" OR IMF OR \"World Bank\" OR budget deficit",
+    "(inflation OR recession OR \"stock market\" OR GDP OR \"interest rates\" OR unemployment OR trade OR \"federal reserve\" OR IMF OR \"World Bank\")",
   Science:
-    "NASA OR space OR discovery OR research OR \"scientific study\" OR Mars OR moon OR astronomy OR quantum OR physics OR biology",
+    "(NASA OR \"space exploration\" OR discovery OR research OR Mars OR moon OR astronomy OR quantum OR physics OR biology)",
   Conflict:
-    "war OR conflict OR military OR ceasefire OR troops OR bombing OR attack OR missile OR rebel OR protest OR coup",
+    "(war OR conflict OR military OR ceasefire OR troops OR bombing OR attack OR missile OR rebel OR protest OR coup)",
 };
 
 function parseSeen(seendate?: string): number {

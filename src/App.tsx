@@ -32,6 +32,7 @@ const Notifications = lazy(() => import("./pages/Notifications"));
 const AuthPage = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Admin = lazy(() => import("./pages/Admin"));
+const AdminReports = lazy(() => import("./pages/AdminReports"));
 const News = lazy(() => import("./pages/News"));
 const SpaceTracker = lazy(() => import("./pages/SpaceTracker"));
 const FireMap = lazy(() => import("./pages/FireMap"));
@@ -107,6 +108,7 @@ const App = () => {
                       <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
                       <Route path="/notifications" element={<AuthGuard><Notifications /></AuthGuard>} />
                       <Route path="/admin" element={<AuthGuard><Admin /></AuthGuard>} />
+                      <Route path="/admin/reports" element={<AuthGuard><AdminReports /></AuthGuard>} />
                       <Route path="/news" element={<AuthGuard><News /></AuthGuard>} />
                       <Route path="/space" element={<AuthGuard><SpaceTracker /></AuthGuard>} />
                       <Route path="/fires" element={<AuthGuard><FireMap /></AuthGuard>} />

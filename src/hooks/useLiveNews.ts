@@ -110,7 +110,7 @@ function classifySeverity(title: string, category: string): NewsArticle["severit
 
 async function fetchCategoryNews(
   category: Exclude<NewsCategory, "All">,
-  maxRecords = 8
+  maxRecords = 15
 ): Promise<NewsArticle[]> {
   const query = CATEGORY_QUERIES[category];
   const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(
@@ -121,6 +121,11 @@ async function fetchCategoryNews(
     const res = await fetchWithTimeout(url, { timeoutMs: 12000 });
     if (!res.ok) return [];
     const text = await res.text();
+    // GDELT sometimes returns error strings instead of JSON
+    if (!text.trim().startsWith("{")) {
+      logger.warn(`GDELT non-JSON response for ${category}:`, text.slice(0, 100));
+      return [];
+    }
     let data: { articles?: GDELTArticle[] };
     try {
       data = JSON.parse(text);
@@ -128,13 +133,12 @@ async function fetchCategoryNews(
       return [];
     }
     const articles: GDELTArticle[] = data?.articles || [];
-    const now = Date.now();
-    const cutoff18h = now - 18 * 3600 * 1000;
 
     return articles
+      .filter((a) => a.url && a.title)
       .map((a, i): NewsArticle => {
         const ts = parseSeen(a.seendate);
-        const title = (a.title || "Breaking News").slice(0, 120);
+        const title = (a.title || "Breaking News").slice(0, 160);
         return {
           id: `${category}-${a.url || i}-${ts}`,
           title,
@@ -149,8 +153,7 @@ async function fetchCategoryNews(
           location: a.sourcecountry || undefined,
           image: a.socialimage || undefined,
         };
-      })
-      .filter((a) => a.publishedTimestamp >= cutoff18h);
+      });
   } catch (err) {
     logger.error(`Failed to fetch ${category} news:`, err);
     return [];

@@ -771,11 +771,12 @@ function SeasonalWheel({ date }: { date: Date }) {
 export default function WatchShowcase() {
   const [now, setNow] = useState(new Date());
   const [tourbillonAngle, setTourbillonAngle] = useState(0);
-  const [location, setLocation] = useState<GeoLocation>({ lat: 40.7128, lng: -74.006, name: "New York (default)" });
-  const [showGeoDialog, setShowGeoDialog] = useState(false);
-  const [geoGranted, setGeoGranted] = useState(false);
   const [showFullStar, setShowFullStar] = useState(false);
   const [starProjection, setStarProjection] = useState<StarProjection>("equatorial");
+
+  // Use global location context (shared with Weather, etc.)
+  const { location: appLoc } = useLocation();
+  const location = { lat: appLoc.lat, lng: appLoc.lon, name: appLoc.label };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -784,15 +785,6 @@ export default function WatchShowcase() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    if (navigator.geolocation && !geoGranted) setShowGeoDialog(true);
-  }, []);
-
-  const handleGeoAllow = useCallback((loc: GeoLocation) => {
-    setLocation(loc); setGeoGranted(true); setShowGeoDialog(false);
-  }, []);
-  const handleGeoDeny = useCallback(() => setShowGeoDialog(false), []);
 
   // Computed
   const moon = moonPhase(now);

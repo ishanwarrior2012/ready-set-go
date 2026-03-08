@@ -99,8 +99,8 @@ export default function AdminReports() {
   const updateReport = async (id: string, updates: Partial<FeedbackReport>) => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("feedback_reports" as any)
+      const { error } = await (supabase as any)
+        .from("feedback_reports")
         .update(updates)
         .eq("id", id);
       if (error) throw error;
@@ -115,7 +115,7 @@ export default function AdminReports() {
 
   const deleteReport = async (id: string) => {
     try {
-      const { error } = await supabase.from("feedback_reports" as any).delete().eq("id", id);
+      const { error } = await (supabase as any).from("feedback_reports").delete().eq("id", id);
       if (error) throw error;
       setReports(prev => prev.filter(r => r.id !== id));
       if (selected?.id === id) setSelected(null);

@@ -106,7 +106,7 @@ export function FeedbackDialog({ open, onClose, defaultTab = "bug" }: FeedbackDi
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("survey_responses" as any).insert({
+      const { error } = await (supabase as any).from("survey_responses").insert({
         user_id: user.id,
         survey_id: "in-app-satisfaction-v1",
         nps_score: npsScore,

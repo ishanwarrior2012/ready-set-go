@@ -6,74 +6,57 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Newspaper,
-  ExternalLink,
-  Search,
-  RefreshCw,
-  Globe,
-  AlertTriangle,
-  Clock,
-  Wifi,
-  Trophy,
-  CloudLightning,
-  Cpu,
-  Heart,
-  Leaf,
-  DollarSign,
-  Telescope,
-  Swords,
-  FlameKindling,
-  TrendingUp,
+  Newspaper, ExternalLink, Search, RefreshCw, Globe, AlertTriangle,
+  Clock, Wifi, Trophy, CloudLightning, Cpu, Heart, Leaf,
+  DollarSign, Telescope, Swords, FlameKindling, TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLiveNews, NewsCategory, NewsArticle } from "@/hooks/useLiveNews";
 
-// ─── Category config ─────────────────────────────────────────────────────────
 const CATEGORIES: { id: NewsCategory; label: string; icon: React.FC<{ className?: string }> }[] = [
-  { id: "All", label: "All", icon: Newspaper },
-  { id: "Geopolitics", label: "Geopolitics", icon: Globe },
-  { id: "Sports", label: "Sports", icon: Trophy },
-  { id: "Conflict", label: "Conflict", icon: Swords },
-  { id: "Natural Disasters", label: "Disasters", icon: FlameKindling },
-  { id: "Weather", label: "Weather", icon: CloudLightning },
-  { id: "Technology", label: "Tech", icon: Cpu },
-  { id: "Economy", label: "Economy", icon: DollarSign },
-  { id: "Health", label: "Health", icon: Heart },
-  { id: "Environment", label: "Environment", icon: Leaf },
-  { id: "Science", label: "Science", icon: Telescope },
+  { id: "All",              label: "All",       icon: Newspaper      },
+  { id: "Geopolitics",      label: "World",     icon: Globe          },
+  { id: "Sports",           label: "Sports",    icon: Trophy         },
+  { id: "Conflict",         label: "Conflict",  icon: Swords         },
+  { id: "Natural Disasters",label: "Disasters", icon: FlameKindling  },
+  { id: "Weather",          label: "Weather",   icon: CloudLightning },
+  { id: "Technology",       label: "Tech",      icon: Cpu            },
+  { id: "Economy",          label: "Economy",   icon: DollarSign     },
+  { id: "Health",           label: "Health",    icon: Heart          },
+  { id: "Environment",      label: "Enviro",    icon: Leaf           },
+  { id: "Science",          label: "Science",   icon: Telescope      },
 ];
 
 const SEVERITY_STYLES: Record<NewsArticle["severity"], { badge: string; border: string }> = {
-  low: { badge: "bg-success/10 text-success border-success/20", border: "" },
-  medium: { badge: "bg-warning/10 text-warning border-warning/20", border: "border-l-2 border-l-warning" },
-  high: { badge: "bg-destructive/20 text-destructive border-destructive/30", border: "border-l-2 border-l-destructive/70" },
-  critical: { badge: "bg-destructive/10 text-destructive border-destructive/20", border: "border-l-2 border-l-destructive bg-destructive/5" },
+  low:      { badge: "bg-muted text-muted-foreground border-border",          border: "" },
+  medium:   { badge: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30", border: "border-l-2 border-l-yellow-500" },
+  high:     { badge: "bg-orange-500/10 text-orange-600 border-orange-500/30", border: "border-l-2 border-l-orange-500" },
+  critical: { badge: "bg-destructive/10 text-destructive border-destructive/30", border: "border-l-2 border-l-destructive bg-destructive/5" },
 };
 
 const CATEGORY_COLORS: Partial<Record<NewsCategory, string>> = {
-  Geopolitics: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  Sports: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-  Conflict: "bg-red-500/10 text-red-600 border-red-500/20",
-  "Natural Disasters": "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  Weather: "bg-sky-500/10 text-sky-600 border-sky-500/20",
-  Technology: "bg-violet-500/10 text-violet-600 border-violet-500/20",
-  Economy: "bg-teal-500/10 text-teal-600 border-teal-500/20",
-  Health: "bg-pink-500/10 text-pink-600 border-pink-500/20",
-  Environment: "bg-lime-500/10 text-lime-600 border-lime-500/20",
-  Science: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20",
+  Geopolitics:       "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  Sports:            "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+  Conflict:          "bg-red-500/10 text-red-600 border-red-500/20",
+  "Natural Disasters":"bg-amber-500/10 text-amber-600 border-amber-500/20",
+  Weather:           "bg-sky-500/10 text-sky-600 border-sky-500/20",
+  Technology:        "bg-violet-500/10 text-violet-600 border-violet-500/20",
+  Economy:           "bg-teal-500/10 text-teal-600 border-teal-500/20",
+  Health:            "bg-pink-500/10 text-pink-600 border-pink-500/20",
+  Environment:       "bg-lime-500/10 text-lime-600 border-lime-500/20",
+  Science:           "bg-indigo-500/10 text-indigo-600 border-indigo-500/20",
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 function timeAgo(ts: number): string {
   const diff = Date.now() - ts;
   const m = Math.floor(diff / 60000);
   if (m < 1) return "Just now";
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
-  return `${h}h ago`;
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
 }
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
 function ArticleSkeleton() {
   return (
     <Card className="p-4 space-y-3">
@@ -92,11 +75,7 @@ function ArticleSkeleton() {
   );
 }
 
-interface ArticleCardProps {
-  article: NewsArticle;
-}
-
-function ArticleCard({ article }: ArticleCardProps) {
+function ArticleCard({ article }: { article: NewsArticle }) {
   const s = SEVERITY_STYLES[article.severity];
   const catColor = CATEGORY_COLORS[article.category as NewsCategory] || "bg-muted text-muted-foreground border-border";
 
@@ -113,6 +92,7 @@ function ArticleCard({ article }: ArticleCardProps) {
           />
         </div>
       )}
+
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5 flex-wrap">
           {(article.severity === "high" || article.severity === "critical") && (
@@ -131,7 +111,7 @@ function ArticleCard({ article }: ArticleCardProps) {
         </div>
       </div>
 
-      <h3 className="font-semibold text-sm leading-snug mb-1 line-clamp-2 group-hover:text-primary transition-colors">
+      <h3 className="font-semibold text-sm leading-snug mb-1 line-clamp-3 group-hover:text-primary transition-colors">
         {article.title}
       </h3>
 
@@ -162,29 +142,21 @@ function ArticleCard({ article }: ArticleCardProps) {
   );
 }
 
-// ─── Breaking ticker ──────────────────────────────────────────────────────────
 function BreakingTicker({ articles }: { articles: NewsArticle[] }) {
-  const breaking = articles.filter(
-    (a) => a.severity === "critical" || a.severity === "high"
-  ).slice(0, 5);
+  const breaking = articles.filter(a => a.severity === "critical" || a.severity === "high").slice(0, 8);
   if (!breaking.length) return null;
 
   return (
     <div className="flex items-center gap-3 bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 overflow-hidden">
       <span className="shrink-0 flex items-center gap-1.5 text-xs font-bold text-destructive uppercase tracking-wider">
-        <AlertTriangle className="h-3.5 w-3.5" />
+        <AlertTriangle className="h-3.5 w-3.5 animate-pulse" />
         Breaking
       </span>
       <div className="overflow-hidden flex-1">
-        <div className="flex gap-8 animate-[ticker_30s_linear_infinite] whitespace-nowrap">
+        <div className="flex gap-8 animate-[ticker_40s_linear_infinite] whitespace-nowrap">
           {[...breaking, ...breaking].map((a, i) => (
-            <a
-              key={i}
-              href={a.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-foreground/80 hover:text-primary transition-colors"
-            >
+            <a key={i} href={a.url} target="_blank" rel="noopener noreferrer"
+              className="text-xs text-foreground/80 hover:text-primary transition-colors">
               {a.title}
             </a>
           ))}
@@ -194,56 +166,62 @@ function BreakingTicker({ articles }: { articles: NewsArticle[] }) {
   );
 }
 
-// ─── Featured (top 3 critical) ────────────────────────────────────────────────
 function FeaturedSection({ articles }: { articles: NewsArticle[] }) {
-  const featured = articles.filter(
-    (a) => a.severity === "critical" || a.severity === "high"
-  ).slice(0, 3);
+  const featured = articles.filter(a => a.severity === "critical" || a.severity === "high").slice(0, 3);
   if (!featured.length) return null;
-
   return (
     <section>
       <h2 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
         <TrendingUp className="h-4 w-4" /> Top Stories
       </h2>
-      <div className="grid grid-cols-1 gap-3">
-        {featured.map((a) => (
-          <ArticleCard key={a.id} article={a} />
-        ))}
+      <div className="space-y-3">
+        {featured.map(a => <ArticleCard key={a.id} article={a} />)}
       </div>
     </section>
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
 export default function News() {
-  const { data: articles = [], isLoading, isFetching, refetch, dataUpdatedAt } = useLiveNews();
   const [selectedCategory, setSelectedCategory] = useState<NewsCategory>("All");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const { data: articles = [], isLoading, isFetching, refetch, dataUpdatedAt } =
+    useLiveNews();
+
   const filtered = useMemo(() => {
-    return articles.filter((a) => {
+    return articles.filter(a => {
       const matchCat = selectedCategory === "All" || a.category === selectedCategory;
       const q = searchQuery.toLowerCase();
       const matchSearch =
         !q ||
         a.title.toLowerCase().includes(q) ||
         a.source.toLowerCase().includes(q) ||
-        (a.location || "").toLowerCase().includes(q);
+        (a.location || "").toLowerCase().includes(q) ||
+        a.category.toLowerCase().includes(q);
       return matchCat && matchSearch;
     });
   }, [articles, selectedCategory, searchQuery]);
 
-  const totalCount = articles.length;
-  const criticalCount = articles.filter((a) => a.severity === "critical" || a.severity === "high").length;
-  const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
+  const catCounts = useMemo(() => {
+    const map: Partial<Record<NewsCategory, number>> = {};
+    for (const a of articles) {
+      const c = a.category as NewsCategory;
+      map[c] = (map[c] || 0) + 1;
+    }
+    return map;
+  }, [articles]);
 
+  const totalCount = articles.length;
+  const criticalCount = articles.filter(a => a.severity === "critical" || a.severity === "high").length;
+  const lastUpdated = dataUpdatedAt
+    ? new Date(dataUpdatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "—";
   const showFeatured = selectedCategory === "All" && !searchQuery;
 
   return (
     <Layout>
       <div className="page-container space-y-4">
-        {/* Header Stats */}
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <Card className="p-3 text-center">
             <div className="text-2xl font-bold text-primary">{isLoading ? "…" : totalCount}</div>
@@ -254,8 +232,8 @@ export default function News() {
             <div className="text-xs text-muted-foreground">High Priority</div>
           </Card>
           <Card className="p-3 text-center">
-            <div className={cn("text-2xl font-bold", isFetching ? "text-warning" : "text-success")}>
-              {isFetching ? "…" : "Live"}
+            <div className={cn("text-2xl font-bold", isFetching ? "text-yellow-500" : "text-emerald-500")}>
+              {isFetching ? "Sync" : "Live"}
             </div>
             <div className="text-xs text-muted-foreground">Updated {lastUpdated}</div>
           </Card>
@@ -270,47 +248,48 @@ export default function News() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Search news, sources, locations…"
+              placeholder="Search news, sources, countries…"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => refetch()}
-            disabled={isFetching}
-            title="Refresh"
-          >
+          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching} title="Refresh">
             <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
           </Button>
         </div>
 
-        {/* Category tabs */}
+        {/* Category tabs with article counts */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          {CATEGORIES.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setSelectedCategory(id)}
-              className={cn(
-                "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
-                selectedCategory === id
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <Icon className="h-3 w-3" />
-              {label}
-            </button>
-          ))}
+          {CATEGORIES.map(({ id, label, icon: Icon }) => {
+            const count = id === "All" ? totalCount : (catCounts[id] || 0);
+            return (
+              <button
+                key={id}
+                onClick={() => setSelectedCategory(id)}
+                className={cn(
+                  "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+                  selectedCategory === id
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                <Icon className="h-3 w-3" />
+                {label}
+                {!isLoading && count > 0 && (
+                  <span className={cn(
+                    "ml-0.5 text-[10px] font-bold rounded-full px-1 min-w-[16px] text-center",
+                    selectedCategory === id ? "bg-primary-foreground/20" : "bg-muted-foreground/20"
+                  )}>{count}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Content */}
         {isLoading ? (
           <div className="space-y-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <ArticleSkeleton key={i} />
-            ))}
+            {Array.from({ length: 8 }).map((_, i) => <ArticleSkeleton key={i} />)}
           </div>
         ) : filtered.length === 0 ? (
           <Card className="p-10 text-center">
@@ -319,12 +298,14 @@ export default function News() {
             <p className="text-xs text-muted-foreground/60 mt-1">
               {searchQuery ? "Try a different search term" : "No news in the last 18 hours for this category"}
             </p>
+            <Button variant="outline" size="sm" className="mt-3 gap-1.5" onClick={() => refetch()}>
+              <RefreshCw className="h-3.5 w-3.5" /> Refresh
+            </Button>
           </Card>
         ) : (
           <div className="space-y-6">
             {showFeatured && <FeaturedSection articles={filtered} />}
 
-            {/* All articles */}
             <section>
               {showFeatured && (
                 <h2 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
@@ -332,16 +313,13 @@ export default function News() {
                 </h2>
               )}
               <div className="space-y-3">
-                {filtered.map((article) => (
-                  <ArticleCard key={article.id} article={article} />
-                ))}
+                {filtered.map(article => <ArticleCard key={article.id} article={article} />)}
               </div>
             </section>
 
-            {/* Live indicator */}
             <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
-              <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              Live feed · Showing last 18 hours · Auto-refreshes every 5 min
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Live · Last 18 hours · English · Auto-refreshes every 5 min
             </div>
           </div>
         )}

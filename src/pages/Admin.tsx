@@ -303,6 +303,20 @@ export default function Admin() {
           </Button>
         </div>
 
+        {/* Quick Link to Reports */}
+        <Link to="/admin/reports">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+              <MessageSquare className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-sm">User Reports & Feedback</p>
+              <p className="text-xs text-muted-foreground">View bug reports, feature suggestions & survey responses</p>
+            </div>
+            <ChevronDown className="h-4 w-4 text-muted-foreground -rotate-90" />
+          </div>
+        </Link>
+
         {loading && <Progress value={progress} className="h-1" />}
 
         {/* Stats */}

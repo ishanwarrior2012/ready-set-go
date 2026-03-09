@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   Shield, Users, Search, Crown, UserCog, User, Loader2, RefreshCw,
   ChevronDown, Calendar, AtSign, Code, Camera, Briefcase, Star, UserCheck,
-  Trash2, Mail, Info, MessageSquare,
+  Trash2, Mail, Info, MessageSquare, BarChart3,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {

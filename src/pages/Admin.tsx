@@ -262,6 +262,7 @@ function RegistrationToggle() {
 }
 
 
+export default function Admin() {
   const { user } = useAuth();
   const { isAdmin, loading: rolesLoading } = useAuthorization();
   const { formatDate } = useIntlFormat();

@@ -48,6 +48,18 @@ function AuthPageContent() {
   
   const isResetMode = searchParams.get("mode") === "reset";
 
+  // Check if registration is enabled
+  useEffect(() => {
+    supabase
+      .from("app_config" as any)
+      .select("value")
+      .eq("key", "registration_enabled")
+      .single()
+      .then(({ data }) => {
+        setRegistrationEnabled(data ? (data as any).value === true || (data as any).value === "true" : true);
+      });
+  }, []);
+
   // If user is logged in and in reset mode, show password update form
   useEffect(() => {
     if (user && isResetMode) {

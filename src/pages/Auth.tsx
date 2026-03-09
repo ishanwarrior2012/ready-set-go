@@ -481,45 +481,60 @@ function AuthPageContent() {
             </TabsContent>
 
             <TabsContent value="signup">
-              <CardTitle className="text-xl mb-2">Create an account</CardTitle>
-              <CardDescription className="mb-6">
-                Get started with SafeTrack today
-              </CardDescription>
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email}</p>
-                  )}
+              {registrationEnabled === false ? (
+                <div className="flex flex-col items-center gap-4 py-8">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                    <Lock className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <CardTitle className="text-xl text-center">Registration Closed</CardTitle>
+                  <CardDescription className="text-center">
+                    New registrations are currently disabled by the administrator.
+                    Please contact support if you need access.
+                  </CardDescription>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                  />
-                  <PasswordStrengthMeter password={password} />
-                  {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password}</p>
-                  )}
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Account
-                </Button>
-              </form>
+              ) : (
+                <>
+                  <CardTitle className="text-xl mb-2">Create an account</CardTitle>
+                  <CardDescription className="mb-6">
+                    Get started with SafeTrack today
+                  </CardDescription>
+                  <form onSubmit={handleSignUp} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email">Email</Label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
+                      />
+                      {errors.email && (
+                        <p className="text-sm text-destructive">{errors.email}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Password</Label>
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                      />
+                      <PasswordStrengthMeter password={password} />
+                      {errors.password && (
+                        <p className="text-sm text-destructive">{errors.password}</p>
+                      )}
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Create Account
+                    </Button>
+                  </form>
+                </>
+              )}
             </TabsContent>
           </CardContent>
         </Tabs>

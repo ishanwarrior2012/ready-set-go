@@ -288,6 +288,7 @@ export default function Admin() {
           onRoleChange={handleRoleChange} onDelete={handleDeleteUser}
           updatingRole={updatingRole} currentUserId={user?.id} formatDate={formatDate}
         />
+        <RegistrationToggle />
 
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -304,7 +305,7 @@ export default function Admin() {
         </div>
 
         {/* Quick Links */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Link to="/admin/analytics">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10 transition-colors cursor-pointer">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10">
@@ -324,6 +325,17 @@ export default function Admin() {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">Reports</p>
                 <p className="text-xs text-muted-foreground">Feedback & bugs</p>
+              </div>
+            </div>
+          </Link>
+          <Link to="/domains">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/5 border border-blue-500/20 hover:bg-blue-500/10 transition-colors cursor-pointer">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
+                <Globe className="h-4 w-4 text-blue-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">Domains</p>
+                <p className="text-xs text-muted-foreground">Live previews</p>
               </div>
             </div>
           </Link>

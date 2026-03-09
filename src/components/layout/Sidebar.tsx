@@ -47,26 +47,37 @@ const navigationGroups = [
     ],
   },
   {
-    label: "Tracking",
+    label: "Live Tracking",
     items: [
       { label: "Flight Radar", icon: Plane, path: "/flights" },
       { label: "Marine Traffic", icon: Ship, path: "/marine" },
       { label: "Earthquakes", icon: Mountain, path: "/earthquakes" },
       { label: "Volcanoes", icon: Flame, path: "/volcanoes" },
-      { label: "Tsunami", icon: Waves, path: "/tsunami" },
-      { label: "News Feed", icon: Newspaper, path: "/news" },
+      { label: "Tsunami Alerts", icon: Waves, path: "/tsunami" },
+      { label: "ISS Tracker", icon: Orbit, path: "/iss" },
       { label: "Space Tracker", icon: Satellite, path: "/space" },
+    ],
+  },
+  {
+    label: "Environmental",
+    items: [
+      { label: "Weather", icon: Cloud, path: "/weather" },
       { label: "Fire Map", icon: Flame, path: "/fires" },
       { label: "Traffic Monitor", icon: Car, path: "/traffic" },
     ],
   },
   {
-    label: "Other",
+    label: "Media & Info",
     items: [
-      { label: "Weather", icon: Cloud, path: "/weather" },
+      { label: "News Feed", icon: Newspaper, path: "/news" },
       { label: "Global Radio", icon: Radio, path: "/radio" },
-      { label: "ISS Tracker", icon: Orbit, path: "/iss" },
       { label: "Watch Showcase", icon: Watch, path: "/watch" },
+    ],
+  },
+  {
+    label: "Tools",
+    items: [
+      { label: "Domain Manager", icon: Globe, path: "/domains" },
     ],
   },
   {
@@ -76,6 +87,14 @@ const navigationGroups = [
       { label: "Notifications", icon: Bell, path: "/notifications" },
       { label: "Profile", icon: User, path: "/profile" },
       { label: "Settings", icon: Settings, path: "/settings" },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      { label: "Admin Dashboard", icon: ShieldAlert, path: "/admin" },
+      { label: "Analytics", icon: BarChart3, path: "/admin/analytics" },
+      { label: "Reports", icon: MessageSquare, path: "/admin/reports" },
     ],
   },
 ];

@@ -303,19 +303,31 @@ export default function Admin() {
           </Button>
         </div>
 
-        {/* Quick Link to Reports */}
-        <Link to="/admin/reports">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <MessageSquare className="h-4 w-4 text-primary" />
+        {/* Quick Links */}
+        <div className="grid grid-cols-2 gap-3">
+          <Link to="/admin/analytics">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10 transition-colors cursor-pointer">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10">
+                <BarChart3 className="h-4 w-4 text-amber-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">Analytics</p>
+                <p className="text-xs text-muted-foreground">Stats & trends</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="font-semibold text-sm">User Reports & Feedback</p>
-              <p className="text-xs text-muted-foreground">View bug reports, feature suggestions & survey responses</p>
+          </Link>
+          <Link to="/admin/reports">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                <MessageSquare className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">Reports</p>
+                <p className="text-xs text-muted-foreground">Feedback & bugs</p>
+              </div>
             </div>
-            <ChevronDown className="h-4 w-4 text-muted-foreground -rotate-90" />
-          </div>
-        </Link>
+          </Link>
+        </div>
 
         {loading && <Progress value={progress} className="h-1" />}
 

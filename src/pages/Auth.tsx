@@ -44,6 +44,7 @@ function AuthPageContent() {
   const [showResetSentMessage, setShowResetSentMessage] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const [registrationEnabled, setRegistrationEnabled] = useState<boolean | null>(null);
   
   const isResetMode = searchParams.get("mode") === "reset";
 

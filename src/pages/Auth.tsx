@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Shield, Plane, Ship, Mountain, Radio, Mail, CheckCircle2, KeyRound, ArrowLeft } from "lucide-react";
+import { Loader2, Shield, Plane, Ship, Mountain, Radio, Mail, CheckCircle2, KeyRound, ArrowLeft, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const authSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address").max(255, "Email too long"),
@@ -43,8 +44,21 @@ function AuthPageContent() {
   const [showResetSentMessage, setShowResetSentMessage] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const [registrationEnabled, setRegistrationEnabled] = useState<boolean | null>(null);
   
   const isResetMode = searchParams.get("mode") === "reset";
+
+  // Check if registration is enabled
+  useEffect(() => {
+    supabase
+      .from("app_config" as any)
+      .select("value")
+      .eq("key", "registration_enabled")
+      .single()
+      .then(({ data }) => {
+        setRegistrationEnabled(data ? (data as any).value === true || (data as any).value === "true" : true);
+      });
+  }, []);
 
   // If user is logged in and in reset mode, show password update form
   useEffect(() => {
@@ -467,45 +481,60 @@ function AuthPageContent() {
             </TabsContent>
 
             <TabsContent value="signup">
-              <CardTitle className="text-xl mb-2">Create an account</CardTitle>
-              <CardDescription className="mb-6">
-                Get started with SafeTrack today
-              </CardDescription>
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email}</p>
-                  )}
+              {registrationEnabled === false ? (
+                <div className="flex flex-col items-center gap-4 py-8">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                    <Lock className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <CardTitle className="text-xl text-center">Registration Closed</CardTitle>
+                  <CardDescription className="text-center">
+                    New registrations are currently disabled by the administrator.
+                    Please contact support if you need access.
+                  </CardDescription>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                  />
-                  <PasswordStrengthMeter password={password} />
-                  {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password}</p>
-                  )}
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Account
-                </Button>
-              </form>
+              ) : (
+                <>
+                  <CardTitle className="text-xl mb-2">Create an account</CardTitle>
+                  <CardDescription className="mb-6">
+                    Get started with SafeTrack today
+                  </CardDescription>
+                  <form onSubmit={handleSignUp} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email">Email</Label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
+                      />
+                      {errors.email && (
+                        <p className="text-sm text-destructive">{errors.email}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Password</Label>
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                      />
+                      <PasswordStrengthMeter password={password} />
+                      {errors.password && (
+                        <p className="text-sm text-destructive">{errors.password}</p>
+                      )}
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Create Account
+                    </Button>
+                  </form>
+                </>
+              )}
             </TabsContent>
           </CardContent>
         </Tabs>

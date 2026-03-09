@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   Shield, Users, Search, Crown, UserCog, User, Loader2, RefreshCw,
   ChevronDown, Calendar, AtSign, Code, Camera, Briefcase, Star, UserCheck,
-  Trash2, Mail, Info, MessageSquare, BarChart3,
+  Trash2, Mail, Info, MessageSquare, BarChart3, Globe, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
@@ -198,6 +198,70 @@ function UserDetailSheet({ u, open, onClose, onRoleChange, onDelete, updatingRol
   );
 }
 
+function RegistrationToggle() {
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("app_config" as any)
+      .select("value")
+      .eq("key", "registration_enabled")
+      .single()
+      .then(({ data }) => {
+        if (data) setEnabled((data as any).value === true || (data as any).value === "true");
+        else setEnabled(true);
+      });
+  }, []);
+
+  const toggle = async () => {
+    setSaving(true);
+    const newVal = !enabled;
+    const { error } = await supabase
+      .from("app_config" as any)
+      .update({ value: newVal })
+      .eq("key", "registration_enabled");
+    setSaving(false);
+    if (error) { toast.error("Failed to update registration setting"); return; }
+    setEnabled(newVal);
+    toast.success(newVal ? "Registration re-enabled" : "Registration disabled — new signups blocked");
+  };
+
+  if (enabled === null) return null;
+
+  return (
+    <Card className={`p-4 border-2 transition-colors ${enabled ? "border-emerald-500/30 bg-emerald-500/5" : "border-destructive/30 bg-destructive/5"}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-full ${enabled ? "bg-emerald-500/10" : "bg-destructive/10"}`}>
+            {enabled
+              ? <ToggleRight className="h-5 w-5 text-emerald-600" />
+              : <ToggleLeft className="h-5 w-5 text-destructive" />
+            }
+          </div>
+          <div>
+            <p className="font-semibold text-sm">User Registration</p>
+            <p className={`text-xs ${enabled ? "text-emerald-600" : "text-destructive"}`}>
+              {enabled ? "Open — new users can sign up" : "Closed — sign up form is locked"}
+            </p>
+          </div>
+        </div>
+        <Button
+          variant={enabled ? "destructive" : "default"}
+          size="sm"
+          onClick={toggle}
+          disabled={saving}
+          className="shrink-0"
+        >
+          {saving && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+          {enabled ? "Disable" : "Enable"}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+
 export default function Admin() {
   const { user } = useAuth();
   const { isAdmin, loading: rolesLoading } = useAuthorization();
@@ -288,6 +352,7 @@ export default function Admin() {
           onRoleChange={handleRoleChange} onDelete={handleDeleteUser}
           updatingRole={updatingRole} currentUserId={user?.id} formatDate={formatDate}
         />
+        <RegistrationToggle />
 
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -304,7 +369,7 @@ export default function Admin() {
         </div>
 
         {/* Quick Links */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Link to="/admin/analytics">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10 transition-colors cursor-pointer">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10">
@@ -324,6 +389,17 @@ export default function Admin() {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">Reports</p>
                 <p className="text-xs text-muted-foreground">Feedback & bugs</p>
+              </div>
+            </div>
+          </Link>
+          <Link to="/domains">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/5 border border-blue-500/20 hover:bg-blue-500/10 transition-colors cursor-pointer">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
+                <Globe className="h-4 w-4 text-blue-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">Domains</p>
+                <p className="text-xs text-muted-foreground">Live previews</p>
               </div>
             </div>
           </Link>

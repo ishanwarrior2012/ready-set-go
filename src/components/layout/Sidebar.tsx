@@ -22,6 +22,10 @@ import {
   Car,
   Satellite,
   Watch,
+  Globe,
+  ShieldAlert,
+  BarChart3,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";

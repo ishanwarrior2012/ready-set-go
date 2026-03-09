@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Shield, Plane, Ship, Mountain, Radio, Mail, CheckCircle2, KeyRound, ArrowLeft } from "lucide-react";
+import { Loader2, Shield, Plane, Ship, Mountain, Radio, Mail, CheckCircle2, KeyRound, ArrowLeft, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const authSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address").max(255, "Email too long"),

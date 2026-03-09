@@ -198,7 +198,70 @@ function UserDetailSheet({ u, open, onClose, onRoleChange, onDelete, updatingRol
   );
 }
 
-export default function Admin() {
+function RegistrationToggle() {
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("app_config" as any)
+      .select("value")
+      .eq("key", "registration_enabled")
+      .single()
+      .then(({ data }) => {
+        if (data) setEnabled((data as any).value === true || (data as any).value === "true");
+        else setEnabled(true);
+      });
+  }, []);
+
+  const toggle = async () => {
+    setSaving(true);
+    const newVal = !enabled;
+    const { error } = await supabase
+      .from("app_config" as any)
+      .update({ value: newVal })
+      .eq("key", "registration_enabled");
+    setSaving(false);
+    if (error) { toast.error("Failed to update registration setting"); return; }
+    setEnabled(newVal);
+    toast.success(newVal ? "Registration re-enabled" : "Registration disabled — new signups blocked");
+  };
+
+  if (enabled === null) return null;
+
+  return (
+    <Card className={`p-4 border-2 transition-colors ${enabled ? "border-emerald-500/30 bg-emerald-500/5" : "border-destructive/30 bg-destructive/5"}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-full ${enabled ? "bg-emerald-500/10" : "bg-destructive/10"}`}>
+            {enabled
+              ? <ToggleRight className="h-5 w-5 text-emerald-600" />
+              : <ToggleLeft className="h-5 w-5 text-destructive" />
+            }
+          </div>
+          <div>
+            <p className="font-semibold text-sm">User Registration</p>
+            <p className={`text-xs ${enabled ? "text-emerald-600" : "text-destructive"}`}>
+              {enabled ? "Open — new users can sign up" : "Closed — sign up form is locked"}
+            </p>
+          </div>
+        </div>
+        <Button
+          variant={enabled ? "destructive" : "default"}
+          size="sm"
+          onClick={toggle}
+          disabled={saving}
+          className="shrink-0"
+        >
+          {saving && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+          {enabled ? "Disable" : "Enable"}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+
   const { user } = useAuth();
   const { isAdmin, loading: rolesLoading } = useAuthorization();
   const { formatDate } = useIntlFormat();

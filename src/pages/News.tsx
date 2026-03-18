@@ -9,22 +9,27 @@ import {
   Newspaper, ExternalLink, Search, RefreshCw, Globe, AlertTriangle,
   Clock, Wifi, Trophy, CloudLightning, Cpu, Heart, Leaf,
   DollarSign, Telescope, Swords, FlameKindling, TrendingUp,
+  Flag, Briefcase, Film, ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLiveNews, NewsCategory, NewsArticle } from "@/hooks/useLiveNews";
 
 const CATEGORIES: { id: NewsCategory; label: string; icon: React.FC<{ className?: string }> }[] = [
-  { id: "All",              label: "All",       icon: Newspaper      },
-  { id: "Geopolitics",      label: "World",     icon: Globe          },
-  { id: "Sports",           label: "Sports",    icon: Trophy         },
-  { id: "Conflict",         label: "Conflict",  icon: Swords         },
-  { id: "Natural Disasters",label: "Disasters", icon: FlameKindling  },
-  { id: "Weather",          label: "Weather",   icon: CloudLightning },
-  { id: "Technology",       label: "Tech",      icon: Cpu            },
-  { id: "Economy",          label: "Economy",   icon: DollarSign     },
-  { id: "Health",           label: "Health",    icon: Heart          },
-  { id: "Environment",      label: "Enviro",    icon: Leaf           },
-  { id: "Science",          label: "Science",   icon: Telescope      },
+  { id: "All",              label: "All",          icon: Newspaper      },
+  { id: "Geopolitics",      label: "World",        icon: Globe          },
+  { id: "India",            label: "India",        icon: Flag           },
+  { id: "Sports",           label: "Sports",       icon: Trophy         },
+  { id: "Conflict",         label: "Conflict",     icon: Swords         },
+  { id: "Natural Disasters",label: "Disasters",    icon: FlameKindling  },
+  { id: "Weather",          label: "Weather",      icon: CloudLightning },
+  { id: "Technology",       label: "Tech",         icon: Cpu            },
+  { id: "Economy",          label: "Economy",      icon: DollarSign     },
+  { id: "Business",         label: "Business",     icon: Briefcase      },
+  { id: "Health",           label: "Health",       icon: Heart          },
+  { id: "Environment",      label: "Enviro",       icon: Leaf           },
+  { id: "Science",          label: "Science",      icon: Telescope      },
+  { id: "Entertainment",    label: "Entertainment",icon: Film           },
+  { id: "Crime",            label: "Crime",        icon: ShieldAlert    },
 ];
 
 const SEVERITY_STYLES: Record<NewsArticle["severity"], { badge: string; border: string }> = {

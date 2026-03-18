@@ -116,7 +116,6 @@ const App = () => {
                       <Route path="/fires" element={<AuthGuard><FireMap /></AuthGuard>} />
                       <Route path="/traffic" element={<AuthGuard><TrafficMonitor /></AuthGuard>} />
                       <Route path="/watch" element={<AuthGuard><WatchShowcase /></AuthGuard>} />
-                      <Route path="/domains" element={<AuthGuard><Domains /></AuthGuard>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>

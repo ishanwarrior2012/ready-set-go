@@ -9,22 +9,27 @@ import {
   Newspaper, ExternalLink, Search, RefreshCw, Globe, AlertTriangle,
   Clock, Wifi, Trophy, CloudLightning, Cpu, Heart, Leaf,
   DollarSign, Telescope, Swords, FlameKindling, TrendingUp,
+  Flag, Briefcase, Film, ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLiveNews, NewsCategory, NewsArticle } from "@/hooks/useLiveNews";
 
 const CATEGORIES: { id: NewsCategory; label: string; icon: React.FC<{ className?: string }> }[] = [
-  { id: "All",              label: "All",       icon: Newspaper      },
-  { id: "Geopolitics",      label: "World",     icon: Globe          },
-  { id: "Sports",           label: "Sports",    icon: Trophy         },
-  { id: "Conflict",         label: "Conflict",  icon: Swords         },
-  { id: "Natural Disasters",label: "Disasters", icon: FlameKindling  },
-  { id: "Weather",          label: "Weather",   icon: CloudLightning },
-  { id: "Technology",       label: "Tech",      icon: Cpu            },
-  { id: "Economy",          label: "Economy",   icon: DollarSign     },
-  { id: "Health",           label: "Health",    icon: Heart          },
-  { id: "Environment",      label: "Enviro",    icon: Leaf           },
-  { id: "Science",          label: "Science",   icon: Telescope      },
+  { id: "All",              label: "All",          icon: Newspaper      },
+  { id: "Geopolitics",      label: "World",        icon: Globe          },
+  { id: "India",            label: "India",        icon: Flag           },
+  { id: "Sports",           label: "Sports",       icon: Trophy         },
+  { id: "Conflict",         label: "Conflict",     icon: Swords         },
+  { id: "Natural Disasters",label: "Disasters",    icon: FlameKindling  },
+  { id: "Weather",          label: "Weather",      icon: CloudLightning },
+  { id: "Technology",       label: "Tech",         icon: Cpu            },
+  { id: "Economy",          label: "Economy",      icon: DollarSign     },
+  { id: "Business",         label: "Business",     icon: Briefcase      },
+  { id: "Health",           label: "Health",       icon: Heart          },
+  { id: "Environment",      label: "Enviro",       icon: Leaf           },
+  { id: "Science",          label: "Science",      icon: Telescope      },
+  { id: "Entertainment",    label: "Entertainment",icon: Film           },
+  { id: "Crime",            label: "Crime",        icon: ShieldAlert    },
 ];
 
 const SEVERITY_STYLES: Record<NewsArticle["severity"], { badge: string; border: string }> = {
@@ -45,6 +50,10 @@ const CATEGORY_COLORS: Partial<Record<NewsCategory, string>> = {
   Health:            "bg-pink-500/10 text-pink-600 border-pink-500/20",
   Environment:       "bg-lime-500/10 text-lime-600 border-lime-500/20",
   Science:           "bg-indigo-500/10 text-indigo-600 border-indigo-500/20",
+  India:             "bg-orange-500/10 text-orange-600 border-orange-500/20",
+  Business:          "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
+  Entertainment:     "bg-purple-500/10 text-purple-600 border-purple-500/20",
+  Crime:             "bg-rose-500/10 text-rose-600 border-rose-500/20",
 };
 
 function timeAgo(ts: number): string {
@@ -319,7 +328,7 @@ export default function News() {
 
             <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
               <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              Live · Last 18 hours · English · Auto-refreshes every 5 min
+              Live · {articles.length} articles · 15 categories · Auto-refreshes every 5 min
             </div>
           </div>
         )}

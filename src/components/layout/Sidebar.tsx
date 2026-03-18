@@ -22,7 +22,7 @@ import {
   Car,
   Satellite,
   Watch,
-  Globe,
+  Music,
   ShieldAlert,
   BarChart3,
   MessageSquare,
@@ -77,7 +77,7 @@ const navigationGroups = [
   {
     label: "Tools",
     items: [
-      { label: "Domain Manager", icon: Globe, path: "/domains" },
+      { label: "Chill Zone", icon: Music, path: "/chill" },
     ],
   },
   {

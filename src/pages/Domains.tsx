@@ -97,7 +97,7 @@ export default function Domains() {
   const [hiddenPreviews, setHiddenPreviews] = useState<Set<string>>(new Set());
 
   // Auto-refresh every 30 seconds
-  const autoRefreshRef = useRef<NodeJS.Timeout | null>(null);
+  const autoRefreshRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchDomains = useCallback(async () => {
     const { data, error } = await supabase

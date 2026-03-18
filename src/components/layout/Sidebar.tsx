@@ -77,7 +77,7 @@ const navigationGroups = [
   {
     label: "Tools",
     items: [
-      { label: "Domain Manager", icon: Globe, path: "/domains" },
+      { label: "Chill Zone", icon: Globe, path: "/chill" },
     ],
   },
   {

@@ -4,6 +4,7 @@ import { BottomNavigation } from "./BottomNavigation";
 import { Sidebar } from "./Sidebar";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import { FeedbackButton } from "@/components/feedback/FeedbackButton";
+import { LocationPermissionBanner } from "@/components/location/LocationPermissionBanner";
 import { usePreferences } from "@/contexts/AppContext";
 
 interface LayoutProps {
@@ -26,6 +27,7 @@ export function Layout({ children, showFab = true }: LayoutProps) {
       
       {showFab && <FloatingActionButton />}
       <FeedbackButton />
+      <LocationPermissionBanner />
       <BottomNavigation />
     </div>
   );

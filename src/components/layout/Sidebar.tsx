@@ -77,7 +77,7 @@ const navigationGroups = [
   {
     label: "Tools",
     items: [
-      { label: "Chill Zone", icon: Globe, path: "/chill" },
+      { label: "Chill Zone", icon: Music, path: "/chill" },
     ],
   },
   {

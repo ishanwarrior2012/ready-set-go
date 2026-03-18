@@ -40,7 +40,6 @@ const TrafficMonitor = lazy(() => import("./pages/TrafficMonitor"));
 const WatchShowcase = lazy(() => import("./pages/WatchShowcase"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
-const Domains = lazy(() => import("./pages/Domains"));
 
 const queryClient = new QueryClient({
   defaultOptions: {

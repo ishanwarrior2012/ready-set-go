@@ -50,6 +50,10 @@ const CATEGORY_COLORS: Partial<Record<NewsCategory, string>> = {
   Health:            "bg-pink-500/10 text-pink-600 border-pink-500/20",
   Environment:       "bg-lime-500/10 text-lime-600 border-lime-500/20",
   Science:           "bg-indigo-500/10 text-indigo-600 border-indigo-500/20",
+  India:             "bg-orange-500/10 text-orange-600 border-orange-500/20",
+  Business:          "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
+  Entertainment:     "bg-purple-500/10 text-purple-600 border-purple-500/20",
+  Crime:             "bg-rose-500/10 text-rose-600 border-rose-500/20",
 };
 
 function timeAgo(ts: number): string {

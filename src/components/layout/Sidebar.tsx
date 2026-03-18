@@ -22,7 +22,7 @@ import {
   Car,
   Satellite,
   Watch,
-  Globe,
+  Music,
   ShieldAlert,
   BarChart3,
   MessageSquare,

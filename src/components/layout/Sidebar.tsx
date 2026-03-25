@@ -26,6 +26,7 @@ import {
   ShieldAlert,
   BarChart3,
   MessageSquare,
+  Tv2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";

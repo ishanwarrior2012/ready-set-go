@@ -40,6 +40,7 @@ const TrafficMonitor = lazy(() => import("./pages/TrafficMonitor"));
 const WatchShowcase = lazy(() => import("./pages/WatchShowcase"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
+const IPTVPage = lazy(() => import("./pages/IPTV"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -116,6 +117,7 @@ const App = () => {
                       <Route path="/fires" element={<AuthGuard><FireMap /></AuthGuard>} />
                       <Route path="/traffic" element={<AuthGuard><TrafficMonitor /></AuthGuard>} />
                       <Route path="/watch" element={<AuthGuard><WatchShowcase /></AuthGuard>} />
+                      <Route path="/iptv" element={<AuthGuard><IPTVPage /></AuthGuard>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>

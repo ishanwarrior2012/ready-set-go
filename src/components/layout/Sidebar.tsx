@@ -26,6 +26,7 @@ import {
   ShieldAlert,
   BarChart3,
   MessageSquare,
+  Tv2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -72,6 +73,7 @@ const navigationGroups = [
       { label: "News Feed", icon: Newspaper, path: "/news" },
       { label: "Global Radio", icon: Radio, path: "/radio" },
       { label: "Watch Showcase", icon: Watch, path: "/watch" },
+      { label: "Live TV (IPTV)", icon: Tv2, path: "/iptv" },
     ],
   },
   {

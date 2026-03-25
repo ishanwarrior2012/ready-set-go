@@ -73,6 +73,7 @@ const navigationGroups = [
       { label: "News Feed", icon: Newspaper, path: "/news" },
       { label: "Global Radio", icon: Radio, path: "/radio" },
       { label: "Watch Showcase", icon: Watch, path: "/watch" },
+      { label: "Live TV (IPTV)", icon: Tv2, path: "/iptv" },
     ],
   },
   {
